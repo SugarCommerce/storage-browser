@@ -290,6 +290,8 @@
 	margin: 40px 0;
 	color: #646970;
 	text-align: center;
+	/* An error can carry a hostname with no break in it. */
+	overflow-wrap: anywhere;
 }
 
 .sc-storage-picker__footer {
@@ -307,6 +309,7 @@
 	margin: 0;
 	color: #646970;
 	font-size: 12px;
+	overflow-wrap: anywhere;
 }
 
 .sc-storage-picker__actions {

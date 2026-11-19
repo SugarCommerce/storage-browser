@@ -300,9 +300,11 @@ the file wanted has often only just been uploaded.
 ### Offering it from another package
 
 A field library should not have to depend on a bucket browser to offer one.
-`Picker::source()` is the picker as plain values -- an id, a label, an icon
-and a callable that loads the script -- and the script registers the same id
-in `window.sugarcommerceFileSources`, a registry that names no package:
+`Picker::source()` is the picker as plain values -- an id, a label, an icon,
+a callable that loads the script, and `protocols` (`[ 's3' ]`, the scheme its
+addresses use, so a field that cleans its value as a URL keeps `s3://…`) --
+and the script registers the same id in `window.sugarcommerceFileSources`, a
+registry that names no package:
 
 ```php
 // In the plugin that owns both, where the field library asks for sources.

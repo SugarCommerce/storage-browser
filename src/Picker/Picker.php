@@ -200,18 +200,21 @@ final class Picker {
 	 * This picker as a file source another package can offer.
 	 *
 	 * Plain values only -- no object of this package -- so the package
-	 * offering it needs nothing of this one: an id, a label, an icon, and a
+	 * offering it needs nothing of this one: an id, a label, an icon, a
 	 * callable that loads the script, which then answers to
-	 * `window.sugarcommerceFileSources[ id ].pick( { accept, returns } )`.
+	 * `window.sugarcommerceFileSources[ id ].pick( { accept, returns } )`,
+	 * and the schemes its addresses use, so a field that cleans a URL keeps
+	 * an `s3://bucket/key` it would otherwise drop.
 	 *
-	 * @return array{id: string, label: string, icon: string, enqueue: callable(): bool}
+	 * @return array{id: string, label: string, icon: string, enqueue: callable(): bool, protocols: string[]}
 	 */
 	public function source(): array {
 		return [
-			'id'      => $this->id(),
-			'label'   => $this->label(),
-			'icon'    => Icon::render( 'bucket' ),
-			'enqueue' => [ $this, 'enqueue' ],
+			'id'        => $this->id(),
+			'label'     => $this->label(),
+			'icon'      => Icon::render( 'bucket' ),
+			'enqueue'   => [ $this, 'enqueue' ],
+			'protocols' => [ 's3' ],
 		];
 	}
 

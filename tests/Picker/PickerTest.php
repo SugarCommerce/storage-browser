@@ -246,10 +246,25 @@ final class PickerTest extends TestCase {
 	public function test_the_source_is_plain_values_and_a_callable(): void {
 		$source = $this->browser()->picker()->source();
 
-		$this->assertSame( [ 'id', 'label', 'icon', 'enqueue' ], array_keys( $source ) );
+		$this->assertSame( [ 'id', 'label', 'icon', 'enqueue', 'protocols' ], array_keys( $source ) );
+		// A field that cleans its value as a URL keeps s3:// only when told.
+		$this->assertSame( [ 's3' ], $source['protocols'] );
 		$this->assertSame( 'r2_shop', $source['id'] );
 		$this->assertIsCallable( $source['enqueue'] );
 		$this->assertTrue( ( $source['enqueue'] )() );
+	}
+
+	public function test_an_error_with_an_unbroken_hostname_wraps_on_a_phone(): void {
+		$css = (string) file_get_contents( dirname( __DIR__, 2 ) . '/assets/css/picker.css' );
+
+		// The error is drawn in the empty line and said in the status line.
+		foreach ( [ '__empty', '__status' ] as $part ) {
+			$this->assertMatchesRegularExpression(
+				'/\.sc-storage-picker' . $part . '\s*\{[^}]*overflow-wrap:\s*anywhere;/',
+				$css,
+				$part
+			);
+		}
 	}
 
 	public function test_a_field_gets_one_of_three_shapes(): void {
