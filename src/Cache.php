@@ -1,0 +1,201 @@
+<?php
+/**
+ * Client Cache
+ *
+ * Transient-backed cache for S3 responses, keyed so that a whole bucket -- or
+ * everything -- can be invalidated in one write.
+ *
+ * @package     SugarCommerce\StorageBrowser
+ * @copyright   Copyright (c) 2026, ArrayPress Limited
+ * @license     GPL-2.0-or-later
+ */
+
+declare( strict_types=1 );
+
+namespace SugarCommerce\StorageBrowser;
+
+use SugarCommerce\Support\Cache as StorageCache;
+use SugarCommerce\Support\Cleanup;
+
+/**
+ * Class Cache
+ */
+class Cache {
+
+	/**
+	 * Build a cache.
+	 *
+	 * @param bool   $enabled Whether to read or write anything at all.
+	 * @param int    $ttl     Lifetime of an entry, in seconds.
+	 * @param string $prefix  Prefix for every key and counter this owns.
+	 */
+	public function __construct(
+		private bool $enabled = true,
+		private int $ttl = 3600,
+		private string $prefix = 's3_'
+	) {
+	}
+
+	/**
+	 * Whether this cache reads or writes anything.
+	 *
+	 * @return bool
+	 */
+	public function is_enabled(): bool {
+		return $this->enabled;
+	}
+
+	/**
+	 * Build a key for an operation.
+	 *
+	 * The key folds in two monotonic generation counters -- one global, one
+	 * per bucket. Bumping a counter makes every key derived from it
+	 * unreachable at once, which is how invalidation works here. That matters
+	 * because deleting matching rows from wp_options is a no-op on any site
+	 * running a persistent object cache, where transients never reach the
+	 * options table at all.
+	 *
+	 * @param string $base   Operation name.
+	 * @param array  $params Parameters that distinguish this call.
+	 * @param string $bucket Bucket this entry belongs to, so it can be
+	 *                       invalidated independently of the rest.
+	 *
+	 * @return string Cache key.
+	 */
+	public function key( string $base, array $params = [], string $bucket = '' ): string {
+		// Most call sites already name the bucket inside $params; honour that
+		// so they get per-bucket invalidation without repeating it.
+		if ( '' === $bucket && is_string( $params['bucket'] ?? null ) ) {
+			$bucket = $params['bucket'];
+		}
+
+		$generation = $this->generation() . ':' . $this->generation( $bucket );
+
+		return $this->prefix . md5( $generation . '|' . $base . '|' . serialize( $params ) );
+	}
+
+	/**
+	 * Read an entry.
+	 *
+	 * Through the package's Cache, whose wrapper tells a stored `false` from
+	 * a missing one. Only arrays and scalars are stored -- the client caches
+	 * storage's raw answers, never objects -- so an entry written by another
+	 * plugin's prefixed copy of this library reads back as plain data rather
+	 * than an instance of a class this build does not have.
+	 *
+	 * @param string $key Key from key().
+	 *
+	 * @return mixed The value, or false when there is none or caching is off.
+	 */
+	public function get( string $key ) {
+		return $this->enabled ? StorageCache::get( $key, false ) : false;
+	}
+
+	/**
+	 * Write an entry.
+	 *
+	 * @param string   $key   Key from key().
+	 * @param mixed    $value Value.
+	 * @param int|null $ttl   Lifetime in seconds; this cache's own by default.
+	 *
+	 * @return bool Whether it was written.
+	 */
+	public function set( string $key, $value, ?int $ttl = null ): bool {
+		return $this->enabled && StorageCache::set( $key, $value, $ttl ?? $this->ttl );
+	}
+
+	/**
+	 * Drop one entry.
+	 *
+	 * @param string $key Cache key.
+	 *
+	 * @return bool Whether it was removed.
+	 */
+	public function forget( string $key ): bool {
+		return StorageCache::forget( $key );
+	}
+
+	/**
+	 * Invalidate everything this cache owns.
+	 *
+	 * @return bool Whether the generation was bumped.
+	 */
+	public function flush(): bool {
+		// The authoritative step: every existing key derives from the old
+		// generation, so bumping it invalidates the lot -- including on sites
+		// with a persistent object cache, where the row sweep is a no-op.
+		$bumped = $this->bump();
+
+		// Best-effort tidy-up so orphaned rows do not sit in wp_options until
+		// their TTL lapses. Failure is not fatal; the bump did the real work.
+		$this->sweep_rows();
+
+		return $bumped;
+	}
+
+	/**
+	 * Invalidate everything cached for one bucket.
+	 *
+	 * @param string $bucket Bucket name.
+	 *
+	 * @return bool Whether the generation was bumped.
+	 */
+	public function flush_bucket( string $bucket ): bool {
+		return '' !== $bucket && $this->bump( $bucket );
+	}
+
+	/**
+	 * Name of the option holding a generation counter.
+	 *
+	 * @param string $bucket Bucket name, or '' for the global counter.
+	 *
+	 * @return string
+	 */
+	private function generation_option( string $bucket = '' ): string {
+		return $this->prefix . 'cache_gen_' . ( '' === $bucket ? 'global' : md5( $bucket ) );
+	}
+
+	/**
+	 * Read a generation counter.
+	 *
+	 * @param string $bucket Bucket name, or '' for the global counter.
+	 *
+	 * @return int
+	 */
+	private function generation( string $bucket = '' ): int {
+		return (int) get_option( $this->generation_option( $bucket ), 0 );
+	}
+
+	/**
+	 * Bump a generation counter, orphaning every key derived from it.
+	 *
+	 * @param string $bucket Bucket name, or '' for the global counter.
+	 *
+	 * @return bool
+	 */
+	private function bump( string $bucket = '' ): bool {
+		// autoload=false: these are read on demand, not on every page load.
+		return update_option( $this->generation_option( $bucket ), $this->generation( $bucket ) + 1, false );
+	}
+
+	/**
+	 * Remove this cache's transient rows from the options table.
+	 *
+	 * Only meaningful when transients live there. Reports false rather than
+	 * pretending to succeed when an external object cache is in play, since
+	 * nothing was removed.
+	 *
+	 * @return bool Whether rows were swept.
+	 */
+	private function sweep_rows(): bool {
+		if ( wp_using_ext_object_cache() ) {
+			return false;
+		}
+
+		// Through delete_transient(), one key at a time, so each value row
+		// goes with its timeout row and the option cache hears about it.
+		Cleanup::transients( $this->prefix );
+
+		return true;
+	}
+}

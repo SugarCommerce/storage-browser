@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/12.0/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         colors="true"
+         failOnWarning="true"
+         failOnNotice="true"
+         beStrictAboutOutputDuringTests="true">
+    <!-- The upload tests send files of tens of megabytes in parts, and the
+         picker's search test scans a bucket of twelve thousand keys: more
+         than PHP's default 128M once both have run in one process. -->
+    <php>
+        <ini name="memory_limit" value="512M"/>
+    </php>
+    <testsuites>
+        <testsuite name="Storage Browser">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>src</directory>
+        </include>
+    </source>
+</phpunit>

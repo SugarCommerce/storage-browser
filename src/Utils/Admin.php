@@ -1,0 +1,113 @@
+<?php
+/**
+ * S3 Admin Utility Trait
+ *
+ * Essential static methods for S3-based plugin admin interfaces.
+ *
+ * @package     SugarCommerce\StorageBrowser\Traits
+ * @copyright   Copyright (c) 2025, ArrayPress Limited
+ * @license     GPL2+
+ * @version     1.0.0
+ * @author      David Sherlock
+ */
+
+declare( strict_types=1 );
+
+namespace SugarCommerce\StorageBrowser\Utils;
+
+/**
+ * Class Admin
+ */
+class Admin {
+
+	/**
+	 * Render validation content (path guide + optional connection test)
+	 *
+	 * @param string $button_id Connection test button ID
+	 * @param string $result_id Connection test result ID
+	 * @param bool   $show_test Whether to show connection test
+	 */
+	public static function render_validation_content( string $button_id, string $result_id, bool $show_test = true ): void {
+		?>
+		<div class="s3-validation-field">
+			<?php self::render_path_format_guide(); ?>
+			<?php if ( $show_test ) : ?>
+				<?php self::render_connection_test( $button_id, $result_id ); ?>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render path format guide section
+	 *
+	 * @param array $additional_formats Additional formats to merge with defaults
+	 */
+	public static function render_path_format_guide( array $additional_formats = [] ): void {
+		$formats = array_merge( self::get_default_path_formats(), $additional_formats );
+		?>
+		<div class="s3-path-guide">
+			<h4><?php esc_html_e( 'Supported Path Formats', 'sugarcommerce' ); ?></h4>
+			<ul class="s3-path-formats">
+				<?php foreach ( $formats as $format_data ) : ?>
+					<li>
+						<code><?php echo esc_html( $format_data['example'] ); ?></code>
+						<span class="path-description"><?php echo esc_html( $format_data['description'] ); ?></span>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Get default path formats
+	 *
+	 * @return array Default path format examples
+	 */
+	public static function get_default_path_formats(): array {
+		return [
+			'simple'      => [
+				'example'     => 'my-bucket/file.zip',
+				'description' => __( 'Simple bucket/file', 'sugarcommerce' ),
+			],
+			'nested'      => [
+				'example'     => 'my-bucket/downloads/file.zip',
+				'description' => __( 'With folder structure', 'sugarcommerce' ),
+			],
+			's3_protocol' => [
+				'example'     => 's3://my-bucket/downloads/file.zip',
+				'description' => __( 'With S3 protocol', 'sugarcommerce' ),
+			],
+		];
+	}
+
+	/**
+	 * Render connection test section
+	 *
+	 * @param string $button_id Button ID
+	 * @param string $result_id Result span ID
+	 */
+	public static function render_connection_test( string $button_id, string $result_id ): void {
+		?>
+		<div class="s3-connection-test">
+			<h4><?php esc_html_e( 'Connection Test', 'sugarcommerce' ); ?></h4>
+			<p>
+				<button type="button" id="<?php echo esc_attr( $button_id ); ?>" class="button button-primary s3-test-connection">
+					<?php esc_html_e( 'Test Connection', 'sugarcommerce' ); ?>
+				</button>
+				<span id="<?php echo esc_attr( $result_id ); ?>" class="s3-test-result"></span>
+			</p>
+			<p class="description">
+				<?php
+				// The test runs against the stored credentials, so a change
+				// typed into the fields above is not what gets tested. Without
+				// saying so, the button looks like it is checking what is on
+				// screen and reports the old values as though they were.
+				esc_html_e( 'Tests the saved credentials, not what is currently in the fields above. Save your changes first.', 'sugarcommerce' );
+				?>
+			</p>
+		</div>
+		<?php
+	}
+}

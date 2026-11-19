@@ -1,0 +1,371 @@
+/*
+ * "Choose from your bucket"
+ *
+ * The family's dialog: a native <dialog> in the top layer, white, eight
+ * pixels of radius, the admin's theme colour for what is chosen. On a phone
+ * it is the screen less a margin, and each row keeps a finger's height.
+ */
+
+.sc-storage-picker {
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	inline-size: min(760px, calc(100vw - 32px));
+	block-size: min(640px, calc(100vh - 64px));
+	max-inline-size: none;
+	max-block-size: none;
+	margin: auto;
+	padding: 0;
+	border: 0;
+	border-radius: 8px;
+	background: #fff;
+	box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
+	color: #1e1e1e;
+	font-size: 13px;
+}
+
+.sc-storage-picker:not([open]) {
+	display: none;
+}
+
+.sc-storage-picker::backdrop {
+	background: rgba(0, 0, 0, 0.55);
+}
+
+.sc-storage-picker *,
+.sc-storage-picker *::before,
+.sc-storage-picker *::after {
+	box-sizing: border-box;
+}
+
+.sc-storage-picker [hidden] {
+	display: none !important;
+}
+
+.sc-storage-picker svg {
+	flex: 0 0 auto;
+	inline-size: 20px;
+	block-size: 20px;
+}
+
+.sc-storage-picker__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 16px 20px 8px;
+}
+
+.sc-storage-picker__title {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 1.4;
+}
+
+.sc-storage-picker__close {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: 32px;
+	block-size: 32px;
+	margin: -4px -8px 0 0;
+	padding: 0;
+	border: 0;
+	border-radius: 4px;
+	background: none;
+	color: #1e1e1e;
+	cursor: pointer;
+}
+
+.sc-storage-picker__close:hover {
+	background: #f0f0f1;
+}
+
+.sc-storage-picker__close:focus-visible,
+.sc-storage-picker__crumbs button:focus-visible,
+.sc-storage-picker__option:focus-visible {
+	outline: var(--wp-admin-border-width-focus, 2px) solid var(--wp-admin-theme-color, #2271b1);
+	outline-offset: 1px;
+}
+
+.sc-storage-picker__tools {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 4px 20px 12px;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.sc-storage-picker__where {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	min-block-size: 30px;
+}
+
+.sc-storage-picker__bucket {
+	max-inline-size: 220px;
+	min-block-size: 30px;
+}
+
+.sc-storage-picker__crumbs {
+	flex: 1 1 auto;
+	min-inline-size: 0;
+}
+
+.sc-storage-picker__crumbs ol {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 2px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.sc-storage-picker__crumbs li {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	margin: 0;
+	min-inline-size: 0;
+}
+
+.sc-storage-picker__crumbs button,
+.sc-storage-picker__crumbs [aria-current] {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	max-inline-size: 200px;
+	padding: 4px 6px;
+	overflow: hidden;
+	border-radius: 4px;
+	font-size: 13px;
+	text-decoration: none;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.sc-storage-picker__crumbs button:hover {
+	background: #f0f0f1;
+}
+
+.sc-storage-picker__crumbs [aria-current] {
+	font-weight: 600;
+}
+
+.sc-storage-picker__crumbs svg {
+	inline-size: 16px;
+	block-size: 16px;
+}
+
+.sc-storage-picker__sep {
+	display: inline-flex;
+	color: #8c8f94;
+}
+
+.sc-storage-picker__sep svg {
+	inline-size: 12px;
+	block-size: 12px;
+}
+
+.sc-storage-picker__search {
+	position: relative;
+}
+
+.sc-storage-picker__search .sc-storage-picker__search-icon {
+	position: absolute;
+	inset-block-start: 50%;
+	inset-inline-start: 10px;
+	inline-size: 18px;
+	block-size: 18px;
+	color: #757575;
+	transform: translateY(-50%);
+	pointer-events: none;
+}
+
+.sc-storage-picker .sc-storage-picker__input {
+	inline-size: 100%;
+	min-height: 36px;
+	margin: 0;
+	padding: 6px 12px 6px 36px;
+	font-size: 14px;
+}
+
+.sc-storage-picker__results {
+	flex: 1 1 auto;
+	min-block-size: 0;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	padding: 8px 12px;
+}
+
+.sc-storage-picker__list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.sc-storage-picker__list[aria-busy="true"] {
+	opacity: 0.5;
+}
+
+.sc-storage-picker__option {
+	display: grid;
+	grid-template-columns: 24px minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 10px;
+	min-block-size: 40px;
+	margin: 0 0 2px;
+	padding: 6px 8px;
+	border: 1px solid transparent;
+	border-radius: 6px;
+	cursor: pointer;
+}
+
+.sc-storage-picker__option:hover,
+.sc-storage-picker__option.is-active {
+	background: #f0f0f1;
+}
+
+.sc-storage-picker__option[aria-selected="true"] {
+	border-color: var(--wp-admin-theme-color, #2271b1);
+	background: color-mix(in srgb, var(--wp-admin-theme-color, #2271b1) 10%, transparent);
+	color: var(--wp-admin-theme-color, #2271b1);
+}
+
+@media (forced-colors: active) {
+	.sc-storage-picker__option.is-active {
+		outline: 1px dotted Highlight;
+	}
+
+	.sc-storage-picker__option[aria-selected="true"] {
+		outline: 2px solid Highlight;
+	}
+}
+
+.sc-storage-picker__icon {
+	display: inline-flex;
+	color: #50575e;
+}
+
+.sc-storage-picker__option.is-folder .sc-storage-picker__icon {
+	color: var(--wp-admin-theme-color, #2271b1);
+}
+
+.sc-storage-picker__name {
+	display: flex;
+	flex-direction: column;
+	min-inline-size: 0;
+	overflow: hidden;
+	font-weight: 500;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.sc-storage-picker__path {
+	overflow: hidden;
+	color: #646970;
+	font-size: 12px;
+	font-weight: 400;
+	text-overflow: ellipsis;
+}
+
+.sc-storage-picker__meta {
+	color: #646970;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.sc-storage-picker__option--more {
+	display: flex;
+	justify-content: center;
+	color: var(--wp-admin-theme-color, #2271b1);
+	font-weight: 500;
+}
+
+.sc-storage-picker__empty {
+	margin: 40px 0;
+	color: #646970;
+	text-align: center;
+}
+
+.sc-storage-picker__footer {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 16px;
+	padding: 12px 20px;
+	border-top: 1px solid #f0f0f1;
+}
+
+.sc-storage-picker__status {
+	flex: 1 1 200px;
+	min-inline-size: 0;
+	margin: 0;
+	color: #646970;
+	font-size: 12px;
+}
+
+.sc-storage-picker__actions {
+	display: flex;
+	gap: 8px;
+	margin-inline-start: auto;
+}
+
+/* The button beside a field. */
+.sc-storage-picker__button-icon {
+	inline-size: 16px;
+	block-size: 16px;
+	vertical-align: text-bottom;
+	margin-inline-end: 4px;
+}
+
+[data-storage-picker] {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+@media screen and (max-width: 600px) {
+	.sc-storage-picker {
+		inline-size: calc(100vw - 16px);
+		block-size: calc(100vh - 32px);
+	}
+
+	.sc-storage-picker__header,
+	.sc-storage-picker__tools,
+	.sc-storage-picker__footer {
+		padding-inline: 14px;
+	}
+
+	.sc-storage-picker__results {
+		padding-inline: 6px;
+	}
+
+	.sc-storage-picker__option {
+		min-block-size: 48px;
+		grid-template-columns: 24px minmax(0, 1fr);
+	}
+
+	.sc-storage-picker__meta {
+		grid-column: 2;
+		margin-block-start: -6px;
+	}
+
+	.sc-storage-picker__bucket {
+		flex: 1 1 100%;
+		max-inline-size: none;
+	}
+
+	.sc-storage-picker__actions {
+		flex: 1 1 100%;
+	}
+
+	.sc-storage-picker__actions .button {
+		flex: 1 1 0;
+		min-block-size: 40px;
+	}
+}

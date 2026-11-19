@@ -1,0 +1,101 @@
+{
+  "name": "sugarcommerce/storage-browser",
+  "description": "A bucket browser for the WordPress admin: buckets, folders, search, uploads straight to storage in resumable parts with progress, rename, move and delete, a \"choose from your bucket\" picker for any field, and the daily clear-up of abandoned uploads. Built on sugarcommerce/s3.",
+  "type": "library",
+  "license": "GPL-2.0-or-later",
+  "homepage": "https://github.com/SugarCommerce/storage-browser",
+  "authors": [
+    {
+      "name": "David Sherlock",
+      "homepage": "https://arraypress.com/"
+    }
+  ],
+  "require": {
+    "php": ">=8.3",
+    "sugarcommerce/plugin": "dev-main",
+    "sugarcommerce/s3": "dev-main",
+    "sugarcommerce/storage": "dev-main",
+    "sugarcommerce/support": "dev-main"
+  },
+  "repositories": [
+    {
+      "type": "path",
+      "url": "../plugin",
+      "options": {
+        "symlink": false
+      }
+    },
+    {
+      "type": "path",
+      "url": "../s3",
+      "options": {
+        "symlink": false
+      }
+    },
+    {
+      "type": "path",
+      "url": "../storage",
+      "options": {
+        "symlink": false
+      }
+    },
+    {
+      "type": "path",
+      "url": "../support",
+      "options": {
+        "symlink": false
+      }
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "SugarCommerce\\StorageBrowser\\": "src/"
+    }
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true,
+    "preferred-install": "dist",
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": false
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "support": {
+    "issues": "https://github.com/SugarCommerce/storage-browser/issues",
+    "source": "https://github.com/SugarCommerce/storage-browser"
+  },
+  "keywords": [
+    "wordpress",
+    "s3",
+    "cloudflare-r2",
+    "object-storage",
+    "media-browser",
+    "file-picker",
+    "multipart-upload",
+    "admin",
+    "downloads"
+  ],
+  "require-dev": {
+    "phpcompatibility/phpcompatibility-wp": "^2.1",
+    "phpunit/phpunit": "^12.0",
+    "squizlabs/php_codesniffer": "^3.13.5",
+    "wp-coding-standards/wpcs": "^3.4"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "SugarCommerce\\StorageBrowser\\Tests\\": "tests/"
+    },
+    "exclude-from-classmap": [
+      "/tests/bootstrap.php"
+    ]
+  },
+  "scripts": {
+    "test": "phpunit",
+    "test:js": "npm run test:js",
+    "lint": "phpcs",
+    "format": "phpcbf --standard=phpcs-format.xml.dist",
+    "format:check": "phpcs --standard=phpcs-format.xml.dist"
+  }
+}

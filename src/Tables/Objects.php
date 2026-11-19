@@ -1,0 +1,671 @@
+<?php
+/**
+ * S3 Objects List Table - Updated with Details Modal Support
+ *
+ * Displays S3 objects and folders in a WordPress-style table with pagination,
+ * search functionality, file operations, and details modal support.
+ *
+ * @package     SugarCommerce\StorageBrowser\Tables
+ * @copyright   Copyright (c) 2025, ArrayPress Limited
+ * @license     GPL2+
+ * @version     1.0.0
+ * @author      David Sherlock
+ */
+
+declare( strict_types=1 );
+
+namespace SugarCommerce\StorageBrowser\Tables;
+
+use Exception;
+use WP_Error;
+use WP_List_Table;
+use SugarCommerce\StorageBrowser\Admin\Icon;
+use SugarCommerce\StorageBrowser\Client;
+use SugarCommerce\StorageBrowser\Utils\Directory;
+
+/**
+ * Class Objects
+ *
+ * Extends WP_List_Table to display S3 objects and prefixes with proper pagination
+ * and file operations support including renaming, folder deletion, and details modal.
+ */
+class Objects extends WP_List_Table {
+
+	/*
+	 * Paging, search and continuation-token state read from the query string,
+	 * for display only. WP_List_Table works this way throughout core.
+	 *
+	 * phpcs:disable WordPress.Security.NonceVerification.Recommended
+	 */
+
+	/**
+	 * S3 Client instance
+	 *
+	 * @var Client
+	 */
+	private Client $client;
+
+	/**
+	 * Current S3 bucket name
+	 *
+	 * @var string
+	 */
+	private string $bucket;
+
+	/**
+	 * Current prefix (folder path)
+	 *
+	 * @var string
+	 */
+	private string $prefix;
+
+	/**
+	 * Storage provider ID
+	 *
+	 * @var string
+	 */
+	private string $provider_id;
+
+	/**
+	 * Cached API result to avoid multiple requests
+	 *
+	 * @var array|WP_Error|null
+	 */
+	private $api_result = null;
+
+	/**
+	 * Number of items per page
+	 *
+	 * @var int
+	 */
+	private int $per_page;
+
+	/**
+	 * Constructor
+	 *
+	 * @param array $args        {
+	 *                           Configuration arguments.
+	 *
+	 * @type Client $client      S3 client instance.
+	 * @type string $bucket      Bucket name.
+	 * @type string $prefix      Optional. Object prefix/folder path. Default empty.
+	 * @type string $provider_id Provider identifier.
+	 * @type int    $per_page    Optional. Items per page. Default 1000.
+	 *                           }
+	 */
+	public function __construct( array $args = [] ) {
+		self::load_admin_includes();
+
+		parent::__construct( [
+			'singular' => 'object',
+			'plural'   => 'objects',
+			'ajax'     => true,
+			'screen'   => null,
+		] );
+
+		$this->client      = $args['client'];
+		$this->bucket      = $args['bucket'];
+		$this->prefix      = $args['prefix'] ?? '';
+		$this->provider_id = $args['provider_id'];
+		$this->per_page    = $args['per_page'] ?? 1000;
+	}
+
+	/**
+	 * Load the admin functions WP_List_Table's constructor calls.
+	 *
+	 * The table is also built over REST, for "Load more", where wp-admin's
+	 * includes are not loaded: the constructor's convert_to_screen() is in
+	 * template.php, and the screen it makes is WP_Screen's.
+	 *
+	 * @return void
+	 */
+	private static function load_admin_includes(): void {
+		if ( function_exists( 'convert_to_screen' ) ) {
+			return;
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/class-wp-screen.php';
+		require_once ABSPATH . 'wp-admin/includes/screen.php';
+		require_once ABSPATH . 'wp-admin/includes/template.php';
+	}
+
+	/**
+	 * Get table columns
+	 *
+	 * @return array Column definitions
+	 */
+	public function get_columns(): array {
+		$columns = [];
+
+		// Only when there is something to tick. A folder cannot be inserted
+		// into a product, so a listing of nothing but folders would show a
+		// select-all that selects nothing.
+		if ( $this->has_files() ) {
+			$columns['cb'] = '<input type="checkbox" />';
+		}
+
+		return $columns + [
+			'name'     => __( 'Name', 'sugarcommerce' ),
+			'type'     => __( 'Type', 'sugarcommerce' ),
+			'size'     => __( 'Size', 'sugarcommerce' ),
+			'modified' => __( 'Last Modified', 'sugarcommerce' ),
+			'actions'  => __( 'Actions', 'sugarcommerce' ),
+		];
+	}
+
+	/**
+	 * Get API results from S3 with caching
+	 *
+	 * @return array|WP_Error API results or error object
+	 */
+	private function get_api_results() {
+		if ( $this->api_result !== null ) {
+			return $this->api_result;
+		}
+
+		$continuation_token = isset( $_REQUEST['continuation_token'] )
+			? sanitize_text_field( wp_unslash( $_REQUEST['continuation_token'] ) )
+			: '';
+
+		$result = $this->client->get_objects(
+			$this->bucket,
+			$this->per_page,
+			$this->prefix,
+			'/',
+			$continuation_token
+		);
+
+		$this->api_result = $result;
+
+		return $this->api_result;
+	}
+
+	/**
+	 * Prepare table items for display
+	 *
+	 * Fetches data from S3 API and formats it for table display.
+	 *
+	 * @return void
+	 */
+	public function prepare_items(): void {
+		$result = $this->get_api_results();
+
+		if ( is_wp_error( $result ) ) {
+			$this->items           = [];
+			$this->_column_headers = [ $this->get_columns(), [], [] ];
+
+			return;
+		}
+
+		$objects  = $result['objects'] ?? [];
+		$prefixes = $result['prefixes'] ?? [];
+		$items    = [];
+
+		// Add folders first
+		foreach ( $prefixes as $folder ) {
+			$items[] = [
+				'type'     => 'folder',
+				'name'     => Directory::name( $folder ),
+				'prefix'   => $folder,
+				'size'     => '-',
+				'modified' => '-',
+				'mime'     => 'folder',
+			];
+		}
+
+		// Add files with consolidated method calls
+		foreach ( $objects as $object ) {
+			$items[] = [
+				'type'     => 'file',
+				'name'     => $object->get_filename(),
+				'key'      => $object->get_key(),
+				'size'     => $object->get_size( true ), // Use consolidated method with formatting
+				'modified' => $object->get_last_modified( true, 'M j, Y g:i A' ), // Use consolidated method with custom format
+				'mime'     => $object->get_mime_type(),
+				'object'   => $object,
+			];
+		}
+
+		$this->items = $items;
+
+		// After the items, not before: get_columns() only offers a checkbox
+		// column when the listing holds something selectable.
+		$this->_column_headers = [ $this->get_columns(), [], [] ];
+
+		$this->set_pagination_args( [
+			'total_items' => count( $items ),
+			'per_page'    => $this->per_page,
+			'total_pages' => isset( $result['truncated'] ) && $result['truncated'] ? 2 : 1,
+		] );
+
+		// Store continuation token for AJAX loading
+		if ( isset( $result['truncated'] ) && $result['truncated'] && ! empty( $result['continuation_token'] ) ) {
+			$this->_pagination_args['continuation_token'] = $result['continuation_token'];
+		}
+	}
+
+	/**
+	 * Render the type column with WordPress-style tooltip
+	 *
+	 * @param array $item Item data
+	 *
+	 * @return string Column HTML
+	 */
+	public function column_type( array $item ): string {
+		if ( $item['type'] === 'folder' ) {
+			return '<span class="s3-type-folder">' . esc_html__( 'Folder', 'sugarcommerce' ) . '</span>';
+		}
+
+		// For files, show the category with MIME type in tooltip
+		$category = $item['object']->get_category();
+		$mime_type = $item['mime'];
+		$category_display = ucfirst( $category ); // image -> Image, video -> Video, etc.
+
+		return sprintf(
+			'<span class="s3-type-file s3-category-%s s3-has-tooltip" data-tooltip="%s">%s</span>',
+			esc_attr( $category ),
+			esc_attr( $mime_type ), // MIME type in tooltip
+			esc_html( $category_display ) // Category as main text
+		);
+	}
+
+	/**
+	 * Render the modified column with relative time
+	 *
+	 * @param array $item Item data
+	 *
+	 * @return string Column HTML
+	 */
+	public function column_modified( array $item ): string {
+		if ( $item['type'] === 'folder' || $item['modified'] === '-' ) {
+			return '<span class="s3-no-date">-</span>';
+		}
+
+		// Get the object and add relative time
+		$object = $item['object'];
+		$formatted_date = $item['modified']; // Already formatted in prepare_items
+		$raw_date = $object->get_last_modified(); // Get raw timestamp
+
+		// Add relative time if we have a valid date
+		$relative_time = '';
+		if ( ! empty( $raw_date ) ) {
+			$timestamp = strtotime( $raw_date );
+			if ( $timestamp ) {
+				$relative_time = sprintf(
+					'<br><small class="description">%s</small>',
+					esc_html(
+						sprintf(
+							/* translators: %s: a span of time, such as "2 days". */
+							__( '%s ago', 'sugarcommerce' ),
+							human_time_diff( $timestamp )
+						)
+					)
+				);
+			}
+		}
+
+		return $formatted_date . $relative_time;
+	}
+
+	/**
+	 * Generate row actions for WordPress-style hover actions
+	 *
+	 * @param array $item Item data
+	 *
+	 * @return array Array of action links
+	 */
+	protected function get_row_actions( array $item ): array {
+		$actions = [];
+
+		if ( $item['type'] === 'folder' ) {
+			// Folder actions
+			$actions['delete'] = sprintf(
+				'<a href="#" class="s3-delete-folder" data-folder-name="%s" data-bucket="%s" data-prefix="%s">%s</a>',
+				esc_attr( $item['name'] ),
+				esc_attr( $this->bucket ),
+				esc_attr( $item['prefix'] ),
+				esc_html__( 'Delete', 'sugarcommerce' )
+			);
+
+		} else {
+			// File actions
+			$actions['details'] = sprintf(
+				'<a href="#" class="s3-show-details" data-key="%s">%s</a>',
+				esc_attr( $item['key'] ),
+				esc_html__( 'Details', 'sugarcommerce' )
+			);
+
+			$actions['rename'] = sprintf(
+				'<a href="#" class="s3-rename-file" data-filename="%s" data-bucket="%s" data-key="%s">%s</a>',
+				esc_attr( $item['name'] ),
+				esc_attr( $this->bucket ),
+				esc_attr( $item['key'] ),
+				esc_html__( 'Rename', 'sugarcommerce' )
+			);
+
+			$actions['move'] = sprintf(
+				'<a href="#" class="s3-move-file" data-filename="%s" data-bucket="%s" data-key="%s" data-prefix="%s">%s</a>',
+				esc_attr( $item['name'] ),
+				esc_attr( $this->bucket ),
+				esc_attr( $item['key'] ),
+				esc_attr( $this->prefix ),
+				esc_html__( 'Move', 'sugarcommerce' )
+			);
+
+			// Copy Link action
+			$actions['copy_link'] = sprintf(
+				'<a href="#" class="s3-copy-link" data-filename="%s" data-bucket="%s" data-key="%s">%s</a>',
+				esc_attr( $item['name'] ),
+				esc_attr( $this->bucket ),
+				esc_attr( $item['key'] ),
+				esc_html__( 'Copy Link', 'sugarcommerce' )
+			);
+
+			// Download link.
+			//
+			// The URL is minted on click, not here. Signing every row up front
+			// costs a full SigV4 derivation per file — measurable on a
+			// thousand-row listing — for links most visitors never use, and it
+			// puts a working, hour-long download URL for every object into the
+			// page source, where it survives in browser history, caches and
+			// anything that scrapes the DOM. The Copy Link action already
+			// fetches on demand through the REST route; this now does the same.
+			$actions['download'] = sprintf(
+				'<a href="#" class="s3-download-file" data-bucket="%s" data-key="%s">%s</a>',
+				esc_attr( $this->bucket ),
+				esc_attr( $item['key'] ),
+				esc_html__( 'Download', 'sugarcommerce' )
+			);
+
+			$actions['delete'] = sprintf(
+				'<a href="#" class="s3-delete-file button-delete" data-filename="%s" data-bucket="%s" data-key="%s">%s</a>',
+				esc_attr( $item['name'] ),
+				esc_attr( $this->bucket ),
+				esc_attr( $item['key'] ),
+				esc_html__( 'Delete', 'sugarcommerce' )
+			);
+		}
+
+		return $actions;
+	}
+
+	/**
+	 * Whether the current listing contains anything selectable
+	 *
+	 * @return bool
+	 */
+	private function has_files(): bool {
+		foreach ( $this->items as $item ) {
+			if ( 'file' === ( $item['type'] ?? '' ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Render the row's checkbox
+	 *
+	 * Files only. A folder is a prefix rather than a thing that can be
+	 * inserted into a product, and offering a checkbox that does nothing when
+	 * ticked is worse than offering none.
+	 *
+	 * @param array $item Item data.
+	 *
+	 * @return string
+	 */
+	public function column_cb( $item ): string {
+		if ( 'file' !== $item['type'] ) {
+			return '';
+		}
+
+		return sprintf(
+			'<input type="checkbox" class="s3-select-file" data-filename="%s" data-bucket="%s" data-key="%s" aria-label="%s" />',
+			esc_attr( $item['name'] ),
+			esc_attr( $this->bucket ),
+			esc_attr( $item['key'] ),
+			/* translators: %s: file name */
+			esc_attr( sprintf( __( 'Select %s', 'sugarcommerce' ), $item['name'] ) )
+		);
+	}
+
+	/**
+	 * Render the actions column with Insert File button for files and Open button for folders
+	 *
+	 * @param array $item Item data
+	 *
+	 * @return string Column HTML
+	 */
+	public function column_actions( array $item ): string {
+		if ( $item['type'] === 'file' ) {
+			return sprintf(
+				'<button type="button" class="button button-primary s3-insert-file" data-filename="%s" data-bucket="%s" data-key="%s" title="%s">%s</button>',
+				esc_attr( $item['name'] ),
+				esc_attr( $this->bucket ),
+				esc_attr( $item['key'] ),
+				esc_attr__( 'Insert this file', 'sugarcommerce' ),
+				esc_html__( 'Insert File', 'sugarcommerce' )
+			);
+		} elseif ( $item['type'] === 'folder' ) {
+			return sprintf(
+				'<button type="button" class="button button-secondary s3-open-folder" data-prefix="%s" data-bucket="%s" data-folder-name="%s" title="%s">%s</button>',
+				esc_attr( $item['prefix'] ),
+				esc_attr( $this->bucket ),
+				esc_attr( $item['name'] ),
+				esc_attr__( 'Open this folder', 'sugarcommerce' ),
+				esc_html__( 'Open', 'sugarcommerce' )
+			);
+		}
+
+		return '';
+	}
+
+	/**
+	 * Default column renderer
+	 *
+	 * @param array  $item        Item data
+	 * @param string $column_name Column identifier
+	 *
+	 * @return string Column content
+	 */
+	public function column_default( $item, $column_name ): string {
+		return $item[ $column_name ] ?? '';
+	}
+
+	/**
+	 * Render the name column with icon, link, and row actions
+	 *
+	 * @param array $item Item data
+	 *
+	 * @return string Column HTML
+	 */
+	public function column_name( array $item ): string {
+		$actions = $this->get_row_actions( $item );
+
+		if ( $item['type'] === 'folder' ) {
+			$primary_content = sprintf(
+				'%s <a href="#" class="s3-folder-link" data-prefix="%s" data-bucket="%s"><strong>%s</strong></a>',
+				Icon::render( 'folder', 's3-folder-icon' ),
+				esc_attr( $item['prefix'] ),
+				esc_attr( $this->bucket ),
+				esc_html( $item['name'] )
+			);
+		} else {
+			$primary_content = sprintf(
+				'%s <span class="s3-filename" data-original-name="%s" %s><strong>%s</strong></span>',
+				Icon::file( $item['object']->get_category() ),
+				esc_attr( $item['name'] ),
+				$item['object']->get_data_attributes(),
+				esc_html( $item['name'] )
+			);
+		}
+
+		return $primary_content . $this->row_actions( $actions );
+	}
+
+	/**
+	 * Display table navigation (search, pagination)
+	 *
+	 * @param string $which Position: 'top' or 'bottom'
+	 *
+	 * @return void
+	 */
+	protected function display_tablenav( $which ): void {
+		?>
+		<div class="tablenav <?php echo esc_attr( $which ); ?>">
+			<?php if ( $which === 'top' ) : ?>
+				<div class="s3-top-nav">
+					<div class="s3-search-container">
+						<!-- WordPress native search input styling -->
+						<input type="search" id="s3-js-search" class="wp-filter-search"
+								placeholder="<?php esc_attr_e( 'Search files and folders...', 'sugarcommerce' ); ?>"
+								autocomplete="off"/>
+						<button type="button" id="s3-js-search-clear" class="button button-secondary" style="display: none;">
+							<?php esc_html_e( 'Clear', 'sugarcommerce' ); ?>
+						</button>
+						<span class="s3-search-stats"></span>
+					</div>
+					<div class="s3-actions-container">
+						<?php
+						// WordPress native button styling
+						printf(
+							'<button type="button" class="button button-secondary s3-refresh-button" data-type="objects" data-bucket="%s" data-prefix="%s" data-provider="%s">%s</button>',
+							esc_attr( $this->bucket ),
+							esc_attr( $this->prefix ),
+							esc_attr( $this->provider_id ),
+							esc_html__( 'Refresh', 'sugarcommerce' )
+						);
+						?>
+					</div>
+				</div>
+			<?php else : ?>
+				<div class="tablenav-pages">
+				<span class="displaying-num" id="s3-total-count">
+					<?php
+					$count    = count( $this->items );
+					$has_more = isset( $this->_pagination_args['continuation_token'] ) && $this->_pagination_args['continuation_token'];
+
+					echo esc_html( sprintf(
+						/* translators: %s: number of items */
+						_n( '%s item', '%s items', $count, 'sugarcommerce' ),
+						number_format_i18n( $count )
+					) );
+
+					if ( $has_more ) {
+						echo esc_html__( ' (more available)', 'sugarcommerce' );
+					}
+					?>
+				</span>
+					<?php if ( isset( $this->_pagination_args['continuation_token'] ) && $this->_pagination_args['continuation_token'] ) : ?>
+						<span class="pagination-links">
+						<!-- WordPress native load more button -->
+						<button type="button" id="s3-load-more" class="button button-secondary"
+								data-token="<?php echo esc_attr( $this->_pagination_args['continuation_token'] ); ?>"
+								data-bucket="<?php echo esc_attr( $this->bucket ); ?>"
+								data-prefix="<?php echo esc_attr( $this->prefix ); ?>"
+								data-provider="<?php echo esc_attr( $this->provider_id ); ?>">
+							<span class="s3-button-text"><?php esc_html_e( 'Load More Items', 'sugarcommerce' ); ?></span>
+						</button>
+						<span class="s3-load-status"></span>
+					</span>
+					<?php endif; ?>
+				</div>
+			<?php endif; ?>
+			<br class="clear"/>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Build one page of object listing data
+	 *
+	 * Shared by the REST route and the legacy AJAX handler so both return
+	 * identical payloads from a single implementation.
+	 *
+	 * @param Client $client             S3 client.
+	 * @param string $provider_id        Provider identifier.
+	 * @param string $bucket             Bucket name.
+	 * @param string $prefix             Current prefix.
+	 * @param string $continuation_token Pagination token.
+	 *
+	 * @return array|WP_Error Page payload, or WP_Error on failure.
+	 */
+	public static function get_page_data(
+		Client $client,
+		string $provider_id,
+		string $bucket,
+		string $prefix = '',
+		string $continuation_token = ''
+	) {
+		if ( '' === $bucket ) {
+			return new WP_Error(
+				'rest_bucket_required',
+				__( 'Bucket parameter is required', 'sugarcommerce' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		$table = new self( [
+			'client'      => $client,
+			'bucket'      => $bucket,
+			'prefix'      => $prefix,
+			'provider_id' => $provider_id,
+			'per_page'    => 1000,
+		] );
+
+		$_REQUEST['continuation_token'] = $continuation_token;
+
+		try {
+			$table->prepare_items();
+
+			$html = '';
+			foreach ( $table->items as $item ) {
+				$html .= $table->render_row( $item );
+			}
+
+			return [
+				'items'              => $table->items,
+				'has_more'           => isset( $table->_pagination_args['continuation_token'] ),
+				'continuation_token' => $table->_pagination_args['continuation_token'] ?? '',
+				'html'               => $html,
+				'count'              => count( $table->items ),
+			];
+		} catch ( Exception $e ) {
+			return new WP_Error(
+				'rest_list_objects_failed',
+				/* translators: %s: error message */
+				sprintf( __( 'Error loading more items: %s', 'sugarcommerce' ), $e->getMessage() ),
+				[ 'status' => 502 ]
+			);
+		}
+	}
+
+	/**
+	 * Render a single table row
+	 *
+	 * @param array $item Item data
+	 *
+	 * @return string HTML for table row
+	 */
+	public function render_row( array $item ): string {
+		$output = '<tr>';
+		$output .= '<td class="column-name has-row-actions">' . $this->column_name( $item ) . '</td>';
+		$output .= '<td class="column-type">' . $this->column_type( $item ) . '</td>';
+		$output .= '<td class="column-size">' . esc_html( $item['size'] ) . '</td>';
+		$output .= '<td class="column-modified">' . $this->column_modified( $item ) . '</td>';
+		$output .= '<td class="column-actions">' . $this->column_actions( $item ) . '</td>';
+		$output .= '</tr>';
+
+		return $output;
+	}
+
+	/**
+	 * Message displayed when no items are found
+	 *
+	 * @return void
+	 */
+	public function no_items(): void {
+		echo esc_html__( 'No files or folders found.', 'sugarcommerce' );
+	}
+}

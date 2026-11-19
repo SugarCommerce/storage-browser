@@ -1,0 +1,1697 @@
+/**
+ * S3 Browser Styles - Conservative Optimization
+ * Keep existing layout, remove only safe redundancies
+ * Reduced from ~800 to ~650 lines with zero visual changes
+ */
+
+/* =============================================================================
+   CORE CONTAINER & LAYOUT
+   ============================================================================= */
+
+.s3-browser-container {
+    padding: 15px;
+}
+
+.s3-browser-container .notice {
+    margin: 0 0 15px 0;
+}
+
+/* =============================================================================
+   TABLE LAYOUT & STRUCTURE
+   ============================================================================= */
+
+.s3-browser-container .wp-list-table {
+    margin-top: 15px;
+}
+
+.wp-list-table th.column-name, .wp-list-table td.column-name {
+    width: 40%;
+    min-width: 250px;
+    overflow-wrap: break-word;
+}
+
+.wp-list-table th.column-type, .wp-list-table td.column-type {
+    width: 20%;
+    white-space: nowrap;
+}
+
+.wp-list-table th.column-size, .wp-list-table td.column-size {
+    width: 12%;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.wp-list-table th.column-modified, .wp-list-table td.column-modified {
+    width: 18%;
+    white-space: nowrap;
+}
+
+.wp-list-table th.column-actions, .wp-list-table td.column-actions {
+    width: 10%;
+    vertical-align: middle;
+    min-width: 120px;
+}
+
+.wp-list-table .row-actions .delete a {
+    color: #b32d2e;
+}
+
+.wp-list-table .row-actions .delete a:hover {
+    color: #d63638;
+}
+
+/* =============================================================================
+   ICONS & FILE TYPE STYLING
+   ============================================================================= */
+
+/* `.arraypress-icon` is every icon the browser draws: an inline Heroicon
+   (src/Browser/Admin/Icon.php). Each rule sizes and places it. */
+.wp-list-table .column-name .arraypress-icon {
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 6px;
+    line-height: 20px;
+}
+
+.wp-list-table .column-name .s3-filename,
+.wp-list-table .column-name .s3-folder-link {
+    display: inline-block;
+    vertical-align: top;
+    line-height: 20px;
+}
+
+.s3-folder-icon {
+    color: #dba617;
+    margin-right: 4px;
+}
+
+.s3-file-icon--image {
+    color: #218838;
+}
+
+.s3-file-icon--document {
+    color: #2271b1;
+}
+
+.s3-file-icon--archive {
+    color: #7b68ee;
+}
+
+.s3-file-icon--audio {
+    color: #1e90ff;
+}
+
+.s3-file-icon--video {
+    color: #dc3545;
+}
+
+.button .dashicons {
+    vertical-align: middle;
+    margin-top: -2px;
+    margin-right: 5px;
+}
+
+/* =============================================================================
+   NAVIGATION & BREADCRUMBS
+   ============================================================================= */
+
+/* Main breadcrumb container */
+.s3-browser-breadcrumbs {
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    border: 1px solid #e5e5e5;
+}
+
+/* Remove default list styling from ol/ul */
+.s3-browser-breadcrumbs .breadcrumb {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Individual breadcrumb items */
+.s3-browser-breadcrumbs .breadcrumb li {
+    display: flex;
+    align-items: center;
+    margin: 0;
+}
+
+/* Links within breadcrumbs */
+.s3-browser-breadcrumbs .breadcrumb li a {
+    color: #0073aa;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+.s3-browser-breadcrumbs .breadcrumb li a:hover {
+    text-decoration: underline;
+}
+
+/* Current/active breadcrumb item */
+.s3-browser-breadcrumbs .breadcrumb li.active,
+.s3-browser-breadcrumbs .breadcrumb li[aria-current="page"] {
+    font-weight: bold;
+}
+
+.s3-browser-breadcrumbs .breadcrumb li.active span,
+.s3-browser-breadcrumbs .breadcrumb li[aria-current="page"] span {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Separators */
+.s3-browser-breadcrumbs .breadcrumb li.separator {
+    margin: 0 8px;
+    color: #999;
+    font-weight: normal;
+}
+
+/* Icons within breadcrumbs */
+.s3-browser-breadcrumbs .arraypress-icon {
+    flex: none;
+    margin-right: 4px;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 1;
+}
+
+/* Ensure proper spacing for icons */
+.s3-browser-breadcrumbs .breadcrumb li a .arraypress-icon,
+.s3-browser-breadcrumbs .breadcrumb li span .arraypress-icon {
+    margin-right: 4px;
+}
+
+/* Bucket and folder name styling */
+.bucket-name, .s3-folder-link {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* =============================================================================
+   SEARCH & TOP NAVIGATION
+   ============================================================================= */
+
+.s3-top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.s3-search-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-grow: 1;
+}
+
+#s3-js-search {
+    min-width: 500px;
+}
+
+/* =============================================================================
+   BUTTONS & CONTROLS
+   ============================================================================= */
+
+#s3-toggle-upload.active {
+    background-color: #135e96;
+    border-color: #135e96;
+}
+
+#s3-load-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-weight: 500;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+#s3-load-more:hover:not(:disabled) {
+    background-color: #f0f6fc;
+    border-color: #0969da;
+    color: #0969da;
+}
+
+#s3-load-more:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: #f6f8fa;
+    border-color: #d1d9e0;
+    color: #656d76;
+}
+
+/* -----------------------------------------------------------------------------
+   Busy buttons
+   -----------------------------------------------------------------------------
+   WordPress core draws the busy spinner as a ::before pseudo-element on
+   .button.updating-message, at `font: normal 20px/1 dashicons` with
+   `vertical-align: top` and no margin. Against a 13px button label that puts a
+   20px glyph flush against the text and aligned to the top of the line box,
+   which reads as misaligned.
+
+   Laying the button out as a flex container sidesteps vertical-align entirely:
+   the pseudo-element becomes a flex item and `align-items: center` centres it
+   against the label regardless of the two font sizes. The rule applies in both
+   states so adding the spinner does not shift the layout — with no icon
+   present, a single-child flex container renders identically to the inline
+   button.
+   -------------------------------------------------------------------------- */
+
+.s3-refresh-button,
+.s3-bucket-details,
+.s3-test-connection,
+.s3-insert-file,
+.s3-open-folder,
+#s3-toggle-upload,
+#s3-create-folder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.s3-refresh-button.updating-message:before,
+.s3-bucket-details.updating-message:before,
+.s3-test-connection.updating-message:before,
+.s3-insert-file.updating-message:before,
+.s3-open-folder.updating-message:before,
+#s3-load-more.updating-message:before,
+#s3-toggle-upload.updating-message:before,
+#s3-create-folder.updating-message:before {
+    /* Match the label rather than towering over it. */
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 1;
+    margin: 0;
+}
+
+.s3-toolbar-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+/* =============================================================================
+   PAGINATION & BOTTOM NAVIGATION
+   ============================================================================= */
+
+.tablenav.bottom {
+    padding: 12px 0;
+}
+
+.tablenav-pages {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.pagination-links {
+    display: flex;
+    align-items: center;
+}
+
+.s3-load-status {
+    font-size: 12px;
+    color: #646970;
+    font-style: italic;
+}
+
+/* =============================================================================
+   NOTIFICATIONS SYSTEM
+   ============================================================================= */
+
+.s3-notification {
+    padding: 12px 15px;
+    margin: 10px 0 15px;
+    border-radius: 4px;
+    text-align: center;
+    animation: s3-notification-fadeIn 0.3s ease-in-out;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.s3-notification-success {
+    background-color: #ecf7ed;
+    border-left: 4px solid #46b450;
+    color: #1e8a27;
+}
+
+.s3-notification-error {
+    background-color: #fbeaea;
+    border-left: 4px solid #dc3232;
+    color: #b32d2d;
+}
+
+.s3-notification-info {
+    background-color: #e5f5fa;
+    border-left: 4px solid #00a0d2;
+    color: #0073aa;
+}
+
+/* =============================================================================
+   UPLOAD CONTAINER STRUCTURE
+   ============================================================================= */
+
+.s3-upload-container {
+    margin: 0 0 20px;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.s3-upload-wrapper {
+    margin-bottom: 15px;
+}
+
+.s3-upload-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid #ccd0d4;
+    background: #f5f5f5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.s3-upload-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.s3-close-upload {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    color: #666;
+}
+
+.s3-close-upload:hover {
+    color: #d63638;
+}
+
+/* A block, as the Dashicon's inline-block with core's line-height: 1 was in
+   effect, so the button is the icon's height and no taller. */
+.s3-close-upload .arraypress-icon {
+    display: block;
+}
+
+.s3-upload-zone {
+    padding: 25px;
+    border: 2px dashed #b4b9be;
+    margin: 15px;
+    background: #f9f9f9;
+    text-align: center;
+}
+
+.s3-upload-zone.s3-dragover {
+    background: #f0f6fc;
+    border-color: #007cba;
+}
+
+.s3-upload-message .arraypress-icon {
+    display: inline-block;
+    vertical-align: top;
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 10px;
+    color: #82878c;
+}
+
+.s3-file-input {
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
+}
+
+.s3-file-input + label {
+    display: inline-block;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.s3-upload-list {
+    margin: 5px 15px 15px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.s3-upload-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    background: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    animation: s3-upload-fade-in 0.3s ease-out;
+}
+
+.s3-upload-success {
+    background-color: #f0f8f0;
+    border-color: #c3e6cb;
+}
+
+.s3-upload-error {
+    background-color: #fff6f6;
+    border-color: #f5c6cb;
+}
+
+.s3-upload-item-info {
+    width: 30%;
+    overflow: hidden;
+    padding-right: 15px;
+}
+
+.s3-filename {
+    display: block;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.s3-filesize {
+    color: #82878c;
+    font-size: 12px;
+}
+
+.s3-progress-container {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+}
+
+.s3-progress-bar {
+    height: 10px;
+    background-color: #eee;
+    border-radius: 10px;
+    flex-grow: 1;
+    margin-right: 10px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.s3-progress {
+    height: 100%;
+    background-color: #007cba;
+    width: 0;
+    border-radius: 10px;
+}
+
+.s3-upload-success .s3-progress {
+    background-color: #46b450;
+}
+
+.s3-upload-error .s3-progress {
+    background-color: #dc3232;
+}
+
+.s3-progress-text {
+    min-width: 40px;
+    text-align: right;
+    font-size: 12px;
+}
+
+.s3-upload-status {
+    width: 40px;
+    text-align: center;
+}
+
+.s3-cancel-upload {
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    cursor: pointer;
+    color: #72777c;
+}
+
+.s3-cancel-upload:hover {
+    color: #dc3232;
+}
+
+/* The status icons sit as core's Dashicon rule placed them. */
+.s3-upload-status .arraypress-icon {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.s3-upload-cancelled .s3-filename,
+.s3-upload-cancelled .s3-filesize,
+.s3-upload-cancelled .s3-progress-text {
+    color: #e74c3c !important;
+}
+
+.s3-upload-notice {
+    margin: 10px 15px;
+    padding: 8px 12px;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    color: #721c24;
+}
+
+.s3-transfer-data {
+    color: #666;
+    font-size: 11px;
+    margin-left: 8px;
+}
+
+/* =============================================================================
+   MODAL SYSTEM - MAIN STRUCTURE
+   ============================================================================= */
+
+.s3-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.s3-modal {
+    background: #fff;
+    border-radius: 3px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.7);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+    position: relative;
+    animation: s3ModalSlideIn 0.2s ease-out;
+    display: flex;
+    flex-direction: column;
+}
+
+.s3-modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #ddd;
+    background: #fcfcfc;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.s3-modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #23282d;
+}
+
+.s3-modal-close {
+    position: absolute;
+    top: 14px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+}
+
+.s3-modal-close:hover {
+    background: #dcdcde;
+    color: #1d2327;
+}
+
+.s3-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex-grow: 1;
+    max-height: calc(90vh - 120px);
+}
+
+.s3-modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.s3-modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.s3-modal-body::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.s3-modal-body::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+.s3-modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #ddd;
+    background: #fcfcfc;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.s3-modal-footer .button {
+    margin-left: 8px;
+}
+
+.s3-modal .button:disabled {
+    background: #ccd0d4 !important;
+    border-color: #ccd0d4 !important;
+    color: #a7aaad !important;
+    cursor: not-allowed !important;
+}
+
+.s3-modal-field {
+    margin-bottom: 20px;
+}
+
+.s3-modal-field label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #23282d;
+}
+
+.s3-modal-field input[type="text"],
+.s3-modal-field input[type="number"] {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 14px;
+    line-height: 1.4;
+    box-sizing: border-box;
+}
+
+.s3-modal-field input[type="text"]:focus,
+.s3-modal-field input[type="number"]:focus {
+    border-color: #0073aa;
+    box-shadow: 0 0 0 1px #0073aa;
+    outline: none;
+}
+
+.s3-modal-field textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 13px;
+    line-height: 1.4;
+    box-sizing: border-box;
+    resize: vertical;
+    font-family: Consolas, Monaco, monospace;
+    background-color: #f9f9f9;
+    color: #0073aa;
+    min-height: 160px;
+}
+
+.s3-modal-field textarea:focus {
+    border-color: #0073aa;
+    box-shadow: 0 0 0 1px #0073aa;
+    outline: none;
+    background-color: #fff;
+}
+
+.s3-modal-field textarea:read-only {
+    background-color: #f6f7f7;
+    color: #555;
+    cursor: default;
+}
+
+.s3-modal-field select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 14px;
+    line-height: 1.4;
+    box-sizing: border-box;
+    background-color: #fff;
+}
+
+.s3-modal-field select:focus {
+    border-color: #0073aa;
+    box-shadow: 0 0 0 1px #0073aa;
+    outline: none;
+}
+
+.s3-modal-field .description {
+    margin-top: 6px;
+    margin-bottom: 0;
+    font-size: 12px;
+    color: #666;
+    line-height: 1.4;
+}
+
+.s3-modal-error {
+    background: #fff;
+    border-left: 4px solid #d63638;
+    padding: 12px;
+    margin-bottom: 16px;
+    color: #d63638;
+    font-size: 13px;
+    border-radius: 0 3px 3px 0;
+}
+
+.s3-modal-loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #666;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+.s3-modal-loading .spinner {
+    float: none;
+    margin: 0;
+}
+
+.s3-modal-field.s3-url-generated textarea {
+    border-color: #46b450;
+    background-color: #ecf7ed;
+}
+
+.s3-modal-field.s3-url-generated .description {
+    color: #1e8a27;
+    font-weight: 500;
+}
+
+.s3-modal-field .description strong {
+    color: #00a32a;
+}
+
+.s3-modal-field .description.success {
+    background: #ecf7ed;
+    border-left: 3px solid #46b450;
+    padding: 8px 12px;
+    border-radius: 0 3px 3px 0;
+    margin-top: 10px;
+}
+
+/* Copy Link Modal specific styles */
+#s3CopyLinkModal .s3-modal {
+    max-width: 600px;
+}
+
+#s3CopyLinkModal .s3-modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+#s3CopyLinkModal .s3-modal-footer .button {
+    margin: 0;
+    min-width: 120px;
+    flex: 0 0 auto;
+}
+
+.s3-modal-field input[type="number"][id="s3ExpiresInput"] {
+    text-align: center;
+    font-weight: 500;
+    max-width: 120px;
+}
+
+.s3-modal-field textarea[id="s3GeneratedUrl"] {
+    word-break: break-all;
+    white-space: pre-wrap;
+}
+
+/* Details Modal */
+#s3DetailsModal .s3-modal,
+#s3BucketDetailsModal .s3-modal {
+    max-width: 700px;
+}
+
+.s3-details-content {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.s3-details-section {
+    margin-bottom: 24px;
+}
+
+.s3-details-section:last-child {
+    margin-bottom: 0;
+}
+
+.s3-details-section h4 {
+    margin: 0 0 12px 0;
+    padding: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #23282d;
+    border-bottom: 1px solid #e1e1e1;
+    padding-bottom: 6px;
+}
+
+.s3-details-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    table-layout: fixed;
+}
+
+.s3-details-table td {
+    padding: 8px 12px 8px 0;
+    border-bottom: 1px solid #f1f1f1;
+    vertical-align: top;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.s3-details-table td:first-child {
+    width: 30%;
+    font-weight: 500;
+    color: #555;
+}
+
+.s3-details-table td:last-child {
+    width: 70%;
+    word-break: break-all;
+}
+
+.s3-details-table code {
+    background: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+    color: #0073aa;
+    font-family: Consolas, Monaco, monospace;
+    word-break: break-all;
+}
+
+.s3-details-table .description {
+    margin: 6px 0 0 0;
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+.s3-details-table tr:last-child td {
+    border-bottom: none;
+}
+
+.s3-checksum-single {
+    color: #00a32a;
+}
+
+.s3-checksum-multipart {
+    color: #d63638;
+}
+
+.s3-checksum-none {
+    color: #666;
+    font-style: italic;
+}
+
+#s3DetailsModal .s3-modal-body {
+    padding: 20px 24px;
+}
+
+#s3DetailsModal .s3-modal-footer {
+    background: #f9f9f9;
+    border-top: 1px solid #e5e5e5;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#s3DetailsModal .s3-modal-footer .button {
+    margin: 0;
+    min-width: 100px;
+}
+
+/* =============================================================================
+   PROGRESS OVERLAY SYSTEM
+   ============================================================================= */
+
+.s3-progress-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 100001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.s3-progress-modal {
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    padding: 30px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    animation: s3ProgressSlideIn 0.3s ease-out;
+}
+
+.s3-progress-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.s3-progress-spinner .spinner {
+    float: none;
+    margin: 0;
+}
+
+.s3-progress-message {
+    font-size: 16px;
+    font-weight: 500;
+    color: #23282d;
+}
+
+.s3-cors-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #666;
+}
+
+.s3-cors-loading .spinner {
+    float: none;
+    margin: 0;
+    width: 16px;
+    height: 16px;
+}
+
+.s3-cors-info,
+.s3-cors-setup {
+    margin-left: 4px;
+    padding: 2px 6px;
+    font-size: 11px;
+    line-height: 1.2;
+    min-height: auto;
+}
+
+.s3-cors-info .dashicons,
+.s3-cors-setup .dashicons {
+    font-size: 12px;
+    width: 12px;
+    height: 12px;
+}
+
+.s3-cors-info:hover {
+    background-color: #f0f6fc;
+    border-color: #0969da;
+    color: #0969da;
+}
+
+.s3-cors-setup {
+    background-color: #dba617;
+    border-color: #dba617;
+    color: white;
+}
+
+.s3-cors-setup:hover {
+    background-color: #b8941a;
+    border-color: #b8941a;
+}
+
+#s3CORSInfoModal .s3-modal {
+    max-width: 600px;
+}
+
+#s3CORSSetupModal .s3-modal {
+    max-width: 500px;
+}
+
+.s3-cors-setup-content {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.s3-cors-setup-details {
+    background: #f8f9fa;
+    border: 1px solid #e5e5e5;
+    border-radius: 3px;
+    padding: 12px;
+    margin: 12px 0;
+}
+
+.s3-cors-setup-details h4 {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #23282d;
+}
+
+.s3-cors-setup-details ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.s3-cors-setup-details li {
+    margin-bottom: 4px;
+    font-size: 12px;
+}
+
+.s3-cors-setup-warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 3px;
+    padding: 12px;
+    margin: 12px 0;
+}
+
+.s3-cors-setup-warning p {
+    margin: 0;
+    font-size: 13px;
+    color: #856404;
+}
+
+/* =============================================================================
+   BUCKET DETAILS MODAL
+   ============================================================================= */
+
+/* Status indicators */
+.s3-status-success {
+    color: #00a32a;
+    font-weight: 600;
+}
+
+.s3-status-error {
+    color: #d63638;
+    font-weight: 600;
+}
+
+.s3-status-warning {
+    color: #dba617;
+    font-weight: 600;
+}
+
+/* CORS setup content */
+.s3-cors-setup-content {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.s3-cors-setup-details {
+    background: #f8f9fa;
+    border: 1px solid #e5e5e5;
+    border-radius: 3px;
+    padding: 12px;
+    margin: 12px 0;
+}
+
+.s3-cors-setup-details h4 {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #23282d;
+}
+
+.s3-cors-config-textarea {
+    width: 100%;
+    height: 140px;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 10px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.s3-cors-rule-list {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.s3-cors-rule-list li {
+    margin-bottom: 4px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.s3-cors-setup-warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 3px;
+    padding: 12px;
+    margin: 12px 0;
+}
+
+.s3-cors-setup-warning p {
+    margin: 0;
+    font-size: 13px;
+    color: #856404;
+}
+
+/* Recommendations list */
+.s3-recommendations-list {
+    margin: 8px 0;
+}
+
+.s3-recommendations-list li {
+    margin-bottom: 4px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+/* Bucket details content */
+.s3-bucket-details-content {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* =============================================================================
+   WORDPRESS-STYLE TOOLTIPS
+   ============================================================================= */
+
+.s3-has-tooltip {
+    position: relative;
+    cursor: help;
+}
+
+.s3-has-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #23282d;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: normal;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    z-index: 1000;
+    pointer-events: none;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.s3-has-tooltip::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: #23282d;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    z-index: 1000;
+    pointer-events: none;
+    margin-bottom: 4px;
+}
+
+.s3-has-tooltip:hover::after,
+.s3-has-tooltip:hover::before {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Adjust tooltip position for edge cases */
+.s3-has-tooltip[data-tooltip-position="left"]::after {
+    left: 0;
+    transform: translateX(0);
+}
+
+.s3-has-tooltip[data-tooltip-position="left"]::before {
+    left: 12px;
+    transform: translateX(0);
+}
+
+.s3-has-tooltip[data-tooltip-position="right"]::after {
+    left: auto;
+    right: 0;
+    transform: translateX(0);
+}
+
+.s3-has-tooltip[data-tooltip-position="right"]::before {
+    left: auto;
+    right: 12px;
+    transform: translateX(0);
+}
+
+/* =============================================================================
+   ANIMATIONS & KEYFRAMES (simplified - removed redundant ones)
+   ============================================================================= */
+
+@keyframes s3-notification-fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes s3ModalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes s3ProgressSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes s3-upload-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================= */
+
+@media screen and (max-width: 782px) {
+    .s3-browser-container {
+        padding: 8px;
+    }
+
+    .s3-top-nav {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    #s3-js-search {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .s3-toolbar-buttons {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .s3-upload-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .s3-upload-item-info {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .s3-progress-container {
+        margin-bottom: 10px;
+    }
+
+    .s3-upload-status {
+        width: 100%;
+        text-align: right;
+    }
+
+    .wp-list-table th.column-name, .wp-list-table td.column-name {
+        width: 35%;
+        min-width: 150px;
+    }
+
+    .wp-list-table th.column-type, .wp-list-table td.column-type {
+        width: 20%;
+        font-size: 10px;
+    }
+
+    .wp-list-table th.column-size, .wp-list-table td.column-size {
+        width: 15%;
+    }
+
+    .wp-list-table th.column-modified, .wp-list-table td.column-modified {
+        width: 15%;
+    }
+
+    .wp-list-table th.column-actions, .wp-list-table td.column-actions {
+        width: 15%;
+        min-width: 80px;
+    }
+
+    .s3-modal {
+        min-width: 280px;
+        max-width: 95vw;
+        max-height: 95vh;
+        margin: 10px;
+    }
+
+    .s3-modal-header,
+    .s3-modal-footer {
+        padding: 16px;
+    }
+
+    .s3-modal-body {
+        padding: 16px;
+        max-height: calc(95vh - 110px);
+    }
+
+    .s3-modal-footer {
+        text-align: center;
+    }
+
+    .s3-modal-footer .button {
+        margin: 4px;
+        min-width: 100px;
+    }
+
+    #s3CopyLinkModal .s3-modal {
+        max-width: 95vw;
+        margin: 10px;
+    }
+
+    #s3CopyLinkModal .s3-modal-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #s3CopyLinkModal .s3-modal-footer .button {
+        width: 100%;
+        min-width: auto;
+        margin-bottom: 8px;
+    }
+
+    #s3CopyLinkModal .s3-modal-footer .button:last-child {
+        margin-bottom: 0;
+    }
+
+    .s3-modal-field input[type="number"][id="s3ExpiresInput"] {
+        max-width: 100%;
+    }
+
+    #s3DetailsModal .s3-modal,
+    #s3BucketDetailsModal .s3-modal,
+    #s3CORSInfoModal .s3-modal,
+    #s3CORSSetupModal .s3-modal {
+        max-width: 95vw;
+        margin: 10px;
+    }
+
+    .s3-details-table td:first-child {
+        width: 35%;
+        font-size: 13px;
+    }
+
+    .s3-details-table td:last-child {
+        font-size: 13px;
+    }
+
+    .s3-details-section h4 {
+        font-size: 14px;
+    }
+
+    #s3DetailsModal .s3-modal-footer {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    #s3DetailsModal .s3-modal-footer .button {
+        width: 100%;
+    }
+}
+
+@media screen and (max-height: 600px) {
+    .s3-modal {
+        max-height: 98vh;
+    }
+
+    .s3-modal-body {
+        max-height: calc(98vh - 100px);
+    }
+
+    .s3-modal-header {
+        padding: 12px 16px;
+    }
+
+    .s3-modal-footer {
+        padding: 12px 16px;
+    }
+
+    .s3-modal-body {
+        padding: 16px;
+    }
+}
+/* Folder Picker
+ *
+ * Used by the move dialog. Nodes load their children when opened, so a node
+ * that has never been expanded is indistinguishable from an empty one until
+ * it is -- the toggle is always shown rather than guessing.
+ */
+.s3-folder-tree {
+    max-height: 260px;
+    overflow-y: auto;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    padding: 8px;
+    background: #fff;
+}
+
+.s3-folder-tree ul {
+    padding: 0;
+    list-style: none;
+}
+
+.s3-folder-tree > ul {
+    margin: 0;
+}
+
+/* Indent each level. This needs to out-specify ".s3-folder-tree ul" above,
+   which is one class plus one element and so beats a lone class -- setting
+   margin: 0 there and margin-left here flattened the whole tree. */
+.s3-folder-tree ul.s3-folder-children {
+    margin: 0 0 0 20px;
+}
+
+.s3-folder-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.s3-folder-row:hover {
+    background: #f0f0f1;
+}
+
+.s3-folder-node.is-selected > .s3-folder-row {
+    background: #2271b1;
+    color: #fff;
+}
+
+.s3-folder-node.is-selected > .s3-folder-row .s3-folder-icon,
+.s3-folder-node.is-selected > .s3-folder-row .s3-folder-toggle {
+    color: #fff;
+}
+
+.s3-folder-icon {
+    color: #dba617;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+}
+
+.s3-folder-toggle {
+    flex: 0 0 16px;
+    width: 16px;
+    text-align: center;
+    color: #787c82;
+    user-select: none;
+    border-radius: 2px;
+}
+
+.s3-folder-toggle::before {
+    content: '\25B8';
+}
+
+.s3-folder-node.is-open > .s3-folder-row .s3-folder-toggle::before {
+    content: '\25BE';
+}
+
+/* A leaf keeps the toggle's width so labels stay aligned, without offering a
+   control that does nothing. */
+.s3-folder-node.is-leaf > .s3-folder-row .s3-folder-toggle {
+    visibility: hidden;
+}
+
+.s3-folder-label {
+    flex: 1 1 auto;
+}
+
+.s3-folder-loading,
+.s3-folder-empty {
+    padding: 3px 6px 3px 26px;
+    color: #787c82;
+    font-style: italic;
+}
+
+/* Object References
+ *
+ * Shown in the rename and move dialogs when something else stores the key.
+ */
+.s3-object-references {
+    margin-top: 12px;
+}
+
+.s3-object-references ul {
+    margin: 4px 0 8px 18px;
+    list-style: disc;
+}
+
+/* Selection Bar
+ *
+ * Pinned to the foot of the browser once files are ticked, matching where the
+ * media modal puts its own. Fixed rather than sticky: sticky pins within the
+ * scrolling ancestor, and with a short listing that ancestor ends just below
+ * the table, so the bar sat under the last row instead of at the bottom.
+ *
+ * Deliberately not core's .media-toolbar. That is styled for the media frame's
+ * DOM -- absolutely positioned inside .media-frame-toolbar at bottom: -60px --
+ * and this renders in an iframe tab with no such ancestry, so the rules apply
+ * and land in the wrong place. The buttons use core's classes, which is where
+ * the look comes from.
+ */
+.s3-selection-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #fff;
+    border-top: 1px solid #dcdcde;
+    box-shadow: 0 -1px 3px rgba(0, 0, 0, .06);
+}
+
+/* display:flex above would otherwise beat the [hidden] attribute, which is
+   why the bar appeared with nothing selected and no count in it. */
+.s3-selection-bar[hidden] {
+    display: none;
+}
+
+/* Typography lifted from core's .media-selection, which is where the media
+   modal's own bar gets its look. Only the typography: that class is
+   positioned absolutely inside the media frame and would land wrong here. */
+.s3-selection-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.s3-selection-bar .count {
+    font-size: 14px;
+    line-height: 1.42857142;
+    font-weight: 600;
+}
+
+.s3-selection-bar .button-link {
+    padding: 1px 8px;
+    line-height: 1.4;
+    color: var(--wp-admin-theme-color, #3858e9);
+    text-decoration: none;
+}
+
+.s3-selection-bar .button-link:hover,
+.s3-selection-bar .button-link:focus {
+    color: var(--wp-admin-theme-color-darker-20, #2145e6);
+    text-decoration: underline;
+}
+
+/* Room for the bar, so it never covers the last row. */
+body.s3-has-selection .s3-browser-container {
+    padding-bottom: 60px;
+}
+
+/* The list table's checkbox column is narrow by default and the header
+   checkbox needs the same room as the rows. */
+.wp-list-table .column-cb {
+    width: 2.2em;
+}
+
+/* The scripts show and hide with the hidden attribute; a rule above that
+   sets display would otherwise win over it. */
+.s3-browser-container [hidden],
+.s3-modal [hidden],
+.s3-upload-container[hidden],
+.s3-ajax-error[hidden],
+.s3-search-clear[hidden],
+#s3-js-search-clear[hidden] {
+    display: none !important;
+}
+
+.s3-modal-close svg {
+    width: 20px;
+    height: 20px;
+}
+
+.s3-folder-row:focus-visible,
+.s3-modal-close:focus-visible {
+    outline: var(--wp-admin-border-width-focus, 2px) solid var(--wp-admin-theme-color, #2271b1);
+    outline-offset: 1px;
+}

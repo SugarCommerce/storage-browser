@@ -1,0 +1,182 @@
+/* Path Format Guide - Minimal Style */
+
+.s3-path-guide {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 3px;
+    margin-bottom: 15px;
+}
+
+.s3-path-guide h4 {
+    margin: 0 0 10px 0;
+    color: #555;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.s3-path-formats {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.s3-path-formats li {
+    margin-bottom: 8px;
+    padding: 0;
+    line-height: 1.4;
+}
+
+.s3-path-formats li:last-child {
+    margin-bottom: 0;
+}
+
+.s3-path-formats code {
+    background: #f1f1f1;
+    border: 1px solid #ddd;
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-family: Consolas, Monaco, 'Courier New', monospace;
+    font-size: 11px;
+    color: #333;
+    margin-right: 8px;
+    display: inline-block;
+}
+
+.s3-path-formats .path-description {
+    color: #666;
+    font-size: 12px;
+}
+
+/* Connection Test - Minimal Style */
+
+.s3-connection-test {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 3px;
+}
+
+.s3-connection-test h4 {
+    margin: 0 0 10px 0;
+    color: #555;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.s3-connection-test p {
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Styling comes from WordPress' own .button-primary. Overriding padding and
+   font-size here is what stopped the core busy spinner sitting straight: it is
+   a 20px dashicon drawn with vertical-align: top, laid out for core's button
+   metrics. Flex centring makes the two font sizes irrelevant. */
+.s3-test-connection {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin-right: 10px;
+}
+
+.s3-test-connection.updating-message:before {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 1;
+    margin: 0;
+}
+
+/* Connection Test Results - Clean */
+
+.s3-test-result {
+    font-size: 12px;
+    line-height: 1.4;
+    display: block;
+    vertical-align: middle;
+    margin-top: 6px;
+}
+
+.s3-test-result.success {
+    color: #46b450;
+}
+
+.s3-test-result.error {
+    color: #dc3232;
+}
+
+/* A scoped token that simply needs a bucket name is neither success nor
+   failure; colouring it red sends admins to re-check working credentials. */
+.s3-test-result.notice {
+    color: #8a6d00;
+}
+
+.s3-test-result.loading {
+    color: #666;
+    font-style: italic;
+}
+
+.s3-test-details {
+    display: block;
+    font-size: 11px;
+    color: #666;
+    margin-top: 4px;
+    font-style: italic;
+}
+
+.s3-bucket-list {
+    display: block;
+    font-size: 11px;
+    color: #666;
+    margin-top: 4px;
+    font-style: italic;
+}
+
+/* Form Integration */
+
+.forminp .s3-validation-field {
+    margin-top: 5px;
+}
+
+.s3-validation-field .s3-path-guide:last-child {
+    margin-bottom: 0;
+}
+
+/* Responsive */
+
+@media screen and (max-width: 782px) {
+    .s3-path-guide,
+    .s3-connection-test {
+        padding: 12px;
+    }
+
+    .s3-test-result {
+        display: block;
+        margin-top: 8px;
+        margin-right: 0;
+    }
+}
+
+/* The whole connection check: one line per step. */
+.s3-check {
+    margin-top: 8px;
+}
+
+.s3-check-list {
+    margin: 6px 0 0;
+    list-style: none;
+}
+
+.s3-check-list li {
+    margin: 0 0 4px;
+}
+
+.s3-check-failed {
+    color: #b32d2e;
+}
+
+.s3-check-skipped {
+    color: #646970;
+}

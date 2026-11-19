@@ -1,0 +1,148 @@
+<?php
+/**
+ * Admin Screen Questions
+ *
+ * Whether the browser belongs on the page currently being rendered. Every
+ * answer depends on the same two settings, which is why these all used to take
+ * them as arguments.
+ *
+ * @package     SugarCommerce\StorageBrowser\Admin
+ * @copyright   Copyright (c) 2025, ArrayPress Limited
+ * @license     GPL2+
+ * @author      David Sherlock
+ */
+
+declare( strict_types=1 );
+
+namespace SugarCommerce\StorageBrowser\Admin;
+
+/**
+ * Class Screen
+ */
+class Screen {
+
+	/*
+	 * $_REQUEST['post_id'] is read to decide whether this browser belongs on
+	 * the screen being rendered. It gates display only, and the media modal is
+	 * the one thing that supplies it -- there is no other signal available
+	 * inside the upload iframe.
+	 *
+	 * phpcs:disable WordPress.Security.NonceVerification.Recommended
+	 */
+
+	/**
+	 * Admin pages that edit a single post.
+	 */
+	private const EDIT_HOOKS = [ 'post.php', 'post-new.php' ];
+
+	/**
+	 * Build the screen tests for one browser instance.
+	 *
+	 * @param Config $config Browser configuration.
+	 */
+	public function __construct( private Config $config ) {
+	}
+
+	/**
+	 * The post currently being edited, if any.
+	 *
+	 * @return int Post id, or 0.
+	 */
+	public function current_post_id(): int {
+		// The media modal passes the post it was opened from, which is the
+		// only signal available inside the upload iframe.
+		if ( isset( $_REQUEST['post_id'] ) ) {
+			return (int) $_REQUEST['post_id'];
+		}
+
+		if ( is_admin() ) {
+			global $post;
+
+			if ( is_object( $post ) ) {
+				return (int) $post->ID;
+			}
+		}
+
+		return 0;
+	}
+
+	/**
+	 * Whether a post type is one this browser appears for.
+	 *
+	 * @param string $post_type Post type to test.
+	 *
+	 * @return bool
+	 */
+	public function allows_post_type( string $post_type ): bool {
+		return ! $this->config->allowed_post_types
+			|| in_array( $post_type, $this->config->allowed_post_types, true );
+	}
+
+	/**
+	 * Whether the post being edited is one this browser appears for.
+	 *
+	 * @return bool
+	 */
+	public function allows_current_post(): bool {
+		$post_id = $this->current_post_id();
+
+		if ( ! $post_id ) {
+			// With no post to check, a restricted browser has no way to know
+			// it belongs here, so it stays hidden. An unrestricted one has
+			// nothing to check against and appears.
+			//
+			// A host page is the exception: it is not a post editor, so it
+			// never has a post, and it asked for the browser by name. The
+			// restriction is about where the tab is offered, not about who
+			// may use it -- that is the capability, checked before this and
+			// again on every request the browser makes.
+			return ! $this->config->allowed_post_types || $this->is_host_request();
+		}
+
+		return $this->allows_post_type( (string) get_post_type( $post_id ) );
+	}
+
+	/**
+	 * Whether the browser is being opened by a page that hosts it.
+	 *
+	 * The host script marks the frame it loads the browser in, because that
+	 * frame is a request of its own and nothing else about it says which
+	 * page it was opened from.
+	 *
+	 * @return bool
+	 */
+	public function is_host_request(): bool {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- A flag about where the frame was opened from; nothing is changed by it.
+		return isset( $_GET['s3_host'] ) && '1' === sanitize_key( wp_unslash( $_GET['s3_host'] ) );
+	}
+
+	/**
+	 * Whether this is the edit screen for a post type, and the user may use it.
+	 *
+	 * @param string $post_type Post type to test.
+	 * @param string $hook      Current admin page hook suffix.
+	 *
+	 * @return bool
+	 */
+	public function is_editing( string $post_type, string $hook ): bool {
+		return in_array( $hook, self::EDIT_HOOKS, true ) && $this->is_showing( $post_type );
+	}
+
+	/**
+	 * Whether the screen being rendered is for a post type, and the user may
+	 * use it.
+	 *
+	 * @param string $post_type Post type to test.
+	 *
+	 * @return bool
+	 */
+	public function is_showing( string $post_type ): bool {
+		if ( ! $this->config->user_is_allowed() ) {
+			return false;
+		}
+
+		$screen = get_current_screen();
+
+		return $screen && $screen->post_type === $post_type && $this->allows_post_type( $post_type );
+	}
+}
