@@ -322,8 +322,8 @@ Plain JavaScript in ES modules (`src/js`), each with one job, built by
 `@wordpress/scripts` into `assets/build` -- one file per page that needs one,
 with an `.asset.php` naming the WordPress scripts it imports
 (`wp-api-fetch`, `wp-i18n`, `wp-dom-ready`) and a version that changes with
-its contents. `Admin\Script::enqueue()` registers an entry from that file
-through `SugarCommerce\Plugin\Assets`.
+its contents. `SugarCommerce\Plugin\Assets::enqueue_built_script()` registers an entry
+from that file.
 
 | Entry | Loaded on | Modules |
 |---|---|---|
@@ -366,7 +366,7 @@ differs from what was committed.
 | `Admin\Templates` (`tmpl-s3-bucket-details`, `tmpl-s3-file-details`, wp.template) | `src/js/lib/templates.js` |
 | `window.S3Browser` (the jQuery object other scripts could extend) | none: modules. `window.S3BrowserHost`, `S3BrowserGlobalConfig`, `s3BrowserConfig` and the `s3-browser:insert` message are unchanged |
 | the scripts' `jquery` and `wp-util` dependencies | none |
-| (new) | `Browser::picker()`, `Picker\Picker`, `Picker\Listing`, `GET buckets`, `GET buckets/{bucket}/browse`, `Admin\Script` |
+| (new) | `Browser::picker()`, `Picker\Picker`, `Picker\Listing`, `GET buckets`, `GET buckets/{bucket}/browse` |
 
 Behaviour that changed: the media frame loads a browser's scripts only in that
 browser's own tab. Every tab is the one `media-upload-popup` page, and two

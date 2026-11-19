@@ -105,7 +105,7 @@ class Assets {
 		$config_handle = $this->enqueue_global_config();
 
 		AssetFiles::enqueue_style( Runtime::handle( 'admin' ), __FILE__, 'css/admin.css' );
-		Script::enqueue( Runtime::handle( 'connection' ), 'connection', [ $config_handle ] );
+		AssetFiles::enqueue_built_script( Runtime::handle( 'connection' ), __FILE__, 'connection', [ $config_handle ] );
 	}
 
 	/**
@@ -285,7 +285,7 @@ class Assets {
 	 * @return void
 	 */
 	private function enqueue_host_integration(): void {
-		Script::enqueue( Runtime::handle( 'browser-host' ), 'host', [ 'media-views', $this->enqueue_global_config() ] );
+		AssetFiles::enqueue_built_script( Runtime::handle( 'browser-host' ), __FILE__, 'host', [ 'media-views', $this->enqueue_global_config() ] );
 	}
 
 	/**
@@ -299,7 +299,7 @@ class Assets {
 		AssetFiles::enqueue_style( Runtime::handle( 'browser' ), __FILE__, 'css/browser.css' );
 		AssetFiles::enqueue_style( Runtime::handle( 'upload' ), __FILE__, 'css/upload.css' );
 
-		$this->browser_loaded = Script::enqueue( Runtime::handle( 'browser' ), 'browser', [ $config_handle ] );
+		$this->browser_loaded = AssetFiles::enqueue_built_script( Runtime::handle( 'browser' ), __FILE__, 'browser', [ $config_handle ] );
 
 		$this->localize_browser();
 	}
@@ -318,7 +318,7 @@ class Assets {
 
 		[ $handle, $entry ] = self::INTEGRATIONS[ $post_type ];
 
-		Script::enqueue( Runtime::handle( $handle ), $entry, [ $this->enqueue_global_config() ] );
+		AssetFiles::enqueue_built_script( Runtime::handle( $handle ), __FILE__, $entry, [ $this->enqueue_global_config() ] );
 	}
 
 	/**

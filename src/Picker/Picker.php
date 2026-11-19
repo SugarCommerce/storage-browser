@@ -15,7 +15,6 @@ use Closure;
 use SugarCommerce\Plugin\Assets as AssetFiles;
 use SugarCommerce\StorageBrowser\Admin\Config;
 use SugarCommerce\StorageBrowser\Admin\Icon;
-use SugarCommerce\StorageBrowser\Admin\Script;
 use SugarCommerce\StorageBrowser\Rest\Controller;
 use SugarCommerce\StorageBrowser\Utils\Runtime;
 
@@ -122,7 +121,7 @@ final class Picker {
 
 		AssetFiles::enqueue_style( Runtime::handle( 'picker' ), __FILE__, 'css/picker.css' );
 
-		if ( ! wp_script_is( self::handle(), 'enqueued' ) && ! Script::enqueue( self::handle(), 'picker' ) ) {
+		if ( ! wp_script_is( self::handle(), 'enqueued' ) && ! AssetFiles::enqueue_built_script( self::handle(), __FILE__, 'picker' ) ) {
 			return false;
 		}
 

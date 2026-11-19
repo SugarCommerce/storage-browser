@@ -14,7 +14,6 @@ use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 use SugarCommerce\Plugin\Assets as AssetFiles;
 use SugarCommerce\S3\Account;
-use SugarCommerce\StorageBrowser\Admin\Script;
 use SugarCommerce\StorageBrowser\Browser;
 use SugarCommerce\StorageBrowser\Client;
 use SugarCommerce\StorageBrowser\Picker\Listing;
@@ -26,6 +25,11 @@ use WP_REST_Request;
 use WP_REST_Response;
 
 final class PickerTest extends TestCase {
+
+	/**
+	 * A file in the package, for the asset helper to find it by.
+	 */
+	private const PICKER_FILE = __DIR__ . '/../../src/Picker/Picker.php';
 
 	private ?FakeS3 $s3 = null;
 
@@ -208,7 +212,7 @@ final class PickerTest extends TestCase {
 
 		$this->assertTrue( $script['enqueued'] );
 		$this->assertStringEndsWith( '/assets/build/picker.js', $script['src'] );
-		$this->assertSame( Script::manifest( 'picker' )['dependencies'], $script['deps'] );
+		$this->assertSame( AssetFiles::built_manifest( self::PICKER_FILE, 'picker' )['dependencies'], $script['deps'] );
 		$this->assertSame( 'sugarcommerce', $script['translations'] );
 		$this->assertCount( 1, $script['inline'] );
 		$this->assertSame( 'before', $script['inline'][0][0] );
@@ -275,14 +279,14 @@ final class PickerTest extends TestCase {
 
 	public function test_every_built_entry_has_its_manifest(): void {
 		foreach ( [ 'browser', 'picker', 'connection', 'host', 'edd', 'wc' ] as $entry ) {
-			$manifest = Script::manifest( $entry );
+			$manifest = AssetFiles::built_manifest( self::PICKER_FILE, $entry );
 
 			$this->assertNotNull( $manifest, $entry );
 			$this->assertNotContains( 'jquery', $manifest['dependencies'], $entry );
 			$this->assertMatchesRegularExpression( '/^[a-f0-9]{20}$/', (string) $manifest['version'], $entry );
 		}
 
-		$this->assertNull( Script::manifest( 'nothing' ) );
-		$this->assertNull( Script::manifest( '../../composer' ) );
+		$this->assertNull( AssetFiles::built_manifest( self::PICKER_FILE, 'nothing' ) );
+		$this->assertNull( AssetFiles::built_manifest( self::PICKER_FILE, '../../composer' ) );
 	}
 }

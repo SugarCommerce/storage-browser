@@ -7,7 +7,6 @@ use SugarCommerce\StorageBrowser\Admin\Assets;
 use SugarCommerce\StorageBrowser\Admin\Config;
 use SugarCommerce\StorageBrowser\Admin\MediaLibrary;
 use SugarCommerce\StorageBrowser\Admin\Screen;
-use SugarCommerce\StorageBrowser\Admin\Script;
 use SugarCommerce\StorageBrowser\Picker\Listing;
 use SugarCommerce\StorageBrowser\Picker\Picker;
 use SugarCommerce\StorageBrowser\Admin\Translations;
@@ -59,7 +58,6 @@ final class CompositionTest extends TestCase {
 			Permissions::class,
 			Account::class,
 			Screen::class,
-			Script::class,
 			Listing::class,
 			Picker::class,
 			Translations::class,
