@@ -18,6 +18,7 @@ namespace SugarCommerce\StorageBrowser\Admin;
 use SugarCommerce\StorageBrowser\Client;
 use SugarCommerce\StorageBrowser\Tables\Buckets;
 use SugarCommerce\StorageBrowser\Tables\Objects;
+use Closure;
 use Exception;
 
 /**
@@ -27,10 +28,11 @@ class MediaLibrary {
 
 	/*
 	 * The nonce warnings below are read-only navigation state. This screen
-	 * renders whatever bucket and prefix the query string names; it changes
-	 * nothing, and every operation that does change something goes through the
-	 * REST controller, which checks a capability and a bucket allow-list on
-	 * every route. A nonce here would protect against a cross-site request
+	 * renders the bucket and prefix the query string names -- once the
+	 * browser's capability and allow-list have said yes, since media-upload.php
+	 * only asks upload_files -- and changes nothing; every operation that does
+	 * change something goes through the REST controller, which checks a
+	 * capability and a bucket allow-list on every route. A nonce here would protect against a cross-site request
 	 * that causes a listing to be displayed to the person who was already
 	 * looking at listings.
 	 *
@@ -43,13 +45,16 @@ class MediaLibrary {
 	 * @param Config $config Browser configuration.
 	 * @param Screen $screen Screen tests.
 	 * @param Assets $assets Asset loader.
-	 * @param Client $client Client the listings read through.
+	 * @param Client       $client          Client the listings read through.
+	 * @param Closure|null $allowed_buckets Resolver for the bucket allow-list;
+	 *                                      empty means any bucket.
 	 */
 	public function __construct(
 		private Config $config,
 		private Screen $screen,
 		private Assets $assets,
-		private Client $client
+		private Client $client,
+		private ?Closure $allowed_buckets = null
 	) {
 	}
 
@@ -119,7 +124,66 @@ class MediaLibrary {
 	* @return void
 	*/
 	public function handle_media_tab(): void {
+		// media-upload.php lets anybody with upload_files open a tab by its
+		// name, whatever capability this browser was given.
+		if ( ! $this->config->user_is_allowed() ) {
+			wp_die( esc_html__( 'You do not have permission to browse this storage.', 'sugarcommerce' ), '', [ 'response' => 403 ] );
+		}
+
 		wp_iframe( [ $this, 'render_tab_content' ] );
+	}
+
+	/**
+	 * The view, bucket and prefix asked for, as far as they are allowed
+	 *
+	 * A bucket the allow-list does not name, or that is not a bucket name at
+	 * all, is the bucket list instead: the listing is drawn here on the
+	 * server, so the REST routes' allow-list check never sees it.
+	 *
+	 * @return array{0: string, 1: string, 2: string} View, bucket, prefix.
+	 */
+	private function requested(): array {
+		$view   = isset( $_GET['view'] ) ? sanitize_text_field( wp_unslash( $_GET['view'] ) ) : '';
+		$bucket = isset( $_GET['bucket'] ) ? sanitize_text_field( wp_unslash( $_GET['bucket'] ) ) : '';
+		$prefix = isset( $_GET['prefix'] ) ? sanitize_text_field( wp_unslash( $_GET['prefix'] ) ) : '';
+
+		// If no bucket is specified, use the default bucket if configured
+		if ( '' === $bucket && '' === $view && '' !== $this->config->default_bucket ) {
+			$bucket = $this->config->default_bucket;
+		}
+
+		if ( 'buckets' === $view || ! $this->bucket_allowed( $bucket ) ) {
+			return [ 'buckets', '', '' ];
+		}
+
+		return [ 'objects', $bucket, $prefix ];
+	}
+
+	/**
+	 * Whether a bucket may be listed here: well formed, and on the
+	 * allow-list when there is one
+	 *
+	 * @param string $bucket Bucket name.
+	 *
+	 * @return bool
+	 */
+	private function bucket_allowed( string $bucket ): bool {
+		if ( 1 !== preg_match( '/^[a-z0-9][a-z0-9.\-]{1,61}[a-z0-9]$/i', $bucket ) ) {
+			return false;
+		}
+
+		$allowed = null === $this->allowed_buckets ? [] : (array) ( $this->allowed_buckets )();
+
+		return [] === $allowed || in_array( $bucket, $allowed, true );
+	}
+
+	/**
+	 * Buckets the bucket list may show: the allow-list, when there is one
+	 *
+	 * @return string[] Empty for no restriction.
+	 */
+	private function listable_buckets(): array {
+		return null === $this->allowed_buckets ? [] : array_values( array_map( 'strval', (array) ( $this->allowed_buckets )() ) );
 	}
 
 	/**
@@ -138,22 +202,7 @@ class MediaLibrary {
 		// Load our specific styles and scripts
 		$this->assets->enqueue_browser_assets( 'media-upload-popup' );
 
-		// Get request parameters
-		$view   = isset( $_GET['view'] ) ? sanitize_text_field( wp_unslash( $_GET['view'] ) ) : '';
-		$bucket = isset( $_GET['bucket'] ) ? sanitize_text_field( wp_unslash( $_GET['bucket'] ) ) : '';
-		$prefix = isset( $_GET['prefix'] ) ? sanitize_text_field( wp_unslash( $_GET['prefix'] ) ) : '';
-
-		// If no bucket is specified, use the default bucket if configured
-		if ( empty( $bucket ) && empty( $view ) ) {
-			// Use the default bucket configuration
-			if ( ! empty( $this->config->default_bucket ) ) {
-				$bucket = $this->config->default_bucket;
-				$view   = 'objects';
-			}
-		}
-
-		// Determine a view type
-		$view = ( $view === 'buckets' || empty( $bucket ) ) ? 'buckets' : 'objects';
+		[ $view, $bucket, $prefix ] = $this->requested();
 
 		// Output content
 		echo '<div class="s3-browser-container">';
@@ -236,10 +285,10 @@ class MediaLibrary {
 	* Enhanced ContentRendering Trait - Modify render_upload_zone() method
 	*/
 	public function render_upload_zone( string $bucket = '', string $prefix = '' ) {
-		// Fall back to the query string for any caller that still relies on it.
+		// Fall back to the query string for any caller that still relies on it,
+		// as far as it is allowed.
 		if ( '' === $bucket ) {
-			$bucket = isset( $_GET['bucket'] ) ? sanitize_text_field( wp_unslash( $_GET['bucket'] ) ) : '';
-			$prefix = isset( $_GET['prefix'] ) ? sanitize_text_field( wp_unslash( $_GET['prefix'] ) ) : $prefix;
+			[ , $bucket, $prefix ] = $this->requested();
 		}
 
 		// The toolbar belongs to a bucket view, not the bucket listing.
@@ -416,6 +465,7 @@ class MediaLibrary {
 		$list_table = new Buckets( [
 			'client'      => $this->client,
 			'provider_id' => $this->config->provider_id,
+			'allowed'     => $this->listable_buckets(),
 		] );
 
 		// Prepare items

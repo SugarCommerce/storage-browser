@@ -174,7 +174,7 @@ class Browser {
 
 		$this->screen    = new Screen( $this->config );
 		$this->assets    = new Assets( $this->config, $this->screen, $this->rest, fn(): array => $this->admin_hook, fn(): array => $this->host_hooks );
-		$this->media     = new MediaLibrary( $this->config, $this->screen, $this->assets, $this->client );
+		$this->media     = new MediaLibrary( $this->config, $this->screen, $this->assets, $this->client, fn(): array => $this->get_allowed_buckets() );
 
 		$this->register_hooks();
 	}

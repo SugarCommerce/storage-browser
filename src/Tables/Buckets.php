@@ -39,6 +39,13 @@ class Buckets extends WP_List_Table {
 	private $provider_id;
 
 	/**
+	 * The buckets this browser may show; empty for any.
+	 *
+	 * @var string[]
+	 */
+	private array $allowed = [];
+
+	/**
 	 * Constructor
 	 *
 	 * @param array $args Additional args
@@ -52,6 +59,7 @@ class Buckets extends WP_List_Table {
 
 		$this->client      = $args['client'];
 		$this->provider_id = $args['provider_id'];
+		$this->allowed     = array_values( array_map( 'strval', (array) ( $args['allowed'] ?? [] ) ) );
 	}
 
 	/**
@@ -82,6 +90,11 @@ class Buckets extends WP_List_Table {
 		$items = [];
 
 		foreach ( $result['buckets'] as $bucket ) {
+			// An allow-list is the whole of what this browser may show.
+			if ( [] !== $this->allowed && ! in_array( (string) $bucket['name'], $this->allowed, true ) ) {
+				continue;
+			}
+
 			$items[] = [
 				'name'    => $bucket['name'],
 				'created' => '' === $bucket['created'] ? '' : (string) wp_date( 'M j, Y g:i A', (int) strtotime( $bucket['created'] ) ),
