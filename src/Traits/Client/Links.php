@@ -13,7 +13,7 @@ declare( strict_types=1 );
 namespace SugarCommerce\StorageBrowser\Traits\Client;
 
 use SugarCommerce\S3\Bucket;
-use SugarCommerce\S3\Method;
+use SugarCommerce\S3\Models\Method;
 use SugarCommerce\Storage\Files\Filename;
 use SugarCommerce\Storage\Files\Mime;
 use WP_Error;

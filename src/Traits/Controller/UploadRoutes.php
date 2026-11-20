@@ -16,7 +16,7 @@ use SugarCommerce\S3\Bucket;
 use SugarCommerce\S3\Cors\Origin;
 use SugarCommerce\S3\Multipart;
 use SugarCommerce\S3\Probe;
-use SugarCommerce\S3\Upload;
+use SugarCommerce\S3\Models\Upload;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;

@@ -4,7 +4,7 @@ declare( strict_types=1 );
 namespace SugarCommerce\StorageBrowser\Tests;
 
 use SugarCommerce\StorageBrowser\Client;
-use SugarCommerce\S3\Method;
+use SugarCommerce\S3\Models\Method;
 use SugarCommerce\S3\Account;
 use SugarCommerce\S3\Provider as ProviderType;
 use PHPUnit\Framework\Attributes\DataProvider;

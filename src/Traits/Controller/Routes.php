@@ -13,7 +13,7 @@ declare( strict_types=1 );
 namespace SugarCommerce\StorageBrowser\Traits\Controller;
 
 use SugarCommerce\S3\Bucket;
-use SugarCommerce\S3\Upload;
+use SugarCommerce\S3\Models\Upload;
 use SugarCommerce\StorageBrowser\Tables\Objects;
 
 /**

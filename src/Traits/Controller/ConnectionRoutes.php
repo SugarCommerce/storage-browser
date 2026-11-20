@@ -14,7 +14,7 @@ namespace SugarCommerce\StorageBrowser\Traits\Controller;
 
 use SugarCommerce\S3\Cors\Origin;
 use SugarCommerce\S3\Probe;
-use SugarCommerce\S3\Probe\Step;
+use SugarCommerce\S3\Models\ProbeStep;
 use SugarCommerce\S3\Transport;
 use SugarCommerce\StorageBrowser\Utils\Runtime;
 use WP_Error;
@@ -70,7 +70,7 @@ trait ConnectionRoutes {
 		$origin = Origin::current();
 		$steps  = ( new Probe() )->run( $this->client->bucket( $bucket ), '' === $origin ? [] : [ $origin ] );
 		$failed = Probe::failure( $steps );
-		$notes  = array_values( array_filter( array_map( static fn( Step $step ): string => $step->note, $steps ) ) );
+		$notes  = array_values( array_filter( array_map( static fn( ProbeStep $step ): string => $step->note, $steps ) ) );
 
 		$this->client->cache()->flush_bucket( $bucket );
 
@@ -83,7 +83,7 @@ trait ConnectionRoutes {
 				: __( 'The connection test found a problem.', 'sugarcommerce' ),
 			'summary' => null === $failed ? '' : $failed->message,
 			'notes'   => $notes,
-			'checks'  => array_map( static fn( Step $step ): array => $step->to_array(), $steps ),
+			'checks'  => array_map( static fn( ProbeStep $step ): array => $step->to_array(), $steps ),
 		] );
 	}
 
