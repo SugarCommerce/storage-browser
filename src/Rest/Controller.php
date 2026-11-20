@@ -25,7 +25,7 @@ use SugarCommerce\StorageBrowser\Utils\Runtime;
 use SugarCommerce\S3\Bucket;
 use SugarCommerce\S3\Multipart;
 use SugarCommerce\S3\Probe;
-use SugarCommerce\S3\ProbeStep;
+use SugarCommerce\S3\Probe\Step;
 use SugarCommerce\S3\Transport;
 use SugarCommerce\S3\Upload;
 use SugarCommerce\StorageBrowser\Client;
@@ -536,7 +536,7 @@ class Controller {
 			[
 				'methods'             => 'PUT',
 				'callback'            => [ $this, 'rest_setup_cors' ],
-				'permission_callback' => [ $this, 'rest_bucket_permission_check' ],
+				'permission_callback' => [ $this, 'rest_settings_permission_check' ],
 				'args'                => $bucket_arg + [
 					'origin' => [
 						'type'              => 'string',
@@ -549,7 +549,7 @@ class Controller {
 			[
 				'methods'             => 'DELETE',
 				'callback'            => [ $this, 'rest_delete_cors' ],
-				'permission_callback' => [ $this, 'rest_bucket_permission_check' ],
+				'permission_callback' => [ $this, 'rest_settings_permission_check' ],
 				'args'                => $bucket_arg,
 			],
 		] );
@@ -603,6 +603,36 @@ class Controller {
 			return new WP_Error(
 				'rest_bucket_forbidden',
 				__( 'You do not have permission to access this bucket.', 'sugarcommerce' ),
+				[ 'status' => rest_authorization_required_code() ]
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Permission check for a bucket's own settings: its CORS rules
+	 *
+	 * Rewriting or removing them changes the bucket for every site and every
+	 * uploader that uses it, which is a site owner's decision, not an
+	 * author's. So the browser's capability and an allowed bucket, and
+	 * manage_options as well.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 *
+	 * @return bool|WP_Error
+	 */
+	public function rest_settings_permission_check( WP_REST_Request $request ) {
+		$allowed = $this->rest_bucket_permission_check( $request );
+
+		if ( true !== $allowed ) {
+			return $allowed;
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Only an administrator can change a bucket\'s settings.', 'sugarcommerce' ),
 				[ 'status' => rest_authorization_required_code() ]
 			);
 		}
@@ -675,7 +705,7 @@ class Controller {
 	 * Object keys legitimately contain spaces, quotes, brackets and unicode, so
 	 * they get slash-stripping and control-character removal rather than
 	 * sanitize_text_field(), which would mangle them. Traversal is rejected
-	 * downstream by S3\Endpoint::request_key().
+	 * downstream by S3\Signing\Endpoint::request_key().
 	 *
 	 * @param mixed $value Raw value.
 	 *
@@ -772,7 +802,7 @@ class Controller {
 		$origin = Origin::current();
 		$steps  = ( new Probe() )->run( $this->client->bucket( $bucket ), '' === $origin ? [] : [ $origin ] );
 		$failed = Probe::failure( $steps );
-		$notes  = array_values( array_filter( array_map( static fn( ProbeStep $step ): string => $step->note, $steps ) ) );
+		$notes  = array_values( array_filter( array_map( static fn( Step $step ): string => $step->note, $steps ) ) );
 
 		$this->client->cache()->flush_bucket( $bucket );
 
@@ -785,7 +815,7 @@ class Controller {
 				: __( 'The connection test found a problem.', 'sugarcommerce' ),
 			'summary' => null === $failed ? '' : $failed->message,
 			'notes'   => $notes,
-			'checks'  => array_map( static fn( ProbeStep $step ): array => $step->to_array(), $steps ),
+			'checks'  => array_map( static fn( Step $step ): array => $step->to_array(), $steps ),
 		] );
 	}
 

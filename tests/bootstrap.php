@@ -698,7 +698,10 @@ if ( ! function_exists( '_doing_it_wrong' ) ) {
 
 if ( ! function_exists( 'current_user_can' ) ) {
 	function current_user_can( $capability, ...$args ) {
-		return (bool) ( $GLOBALS['test_user_can'] ?? true );
+		$can = $GLOBALS['test_user_can'] ?? true;
+
+		// A list is the capabilities this user holds; a bool, all or none.
+		return is_array( $can ) ? in_array( $capability, $can, true ) : (bool) $can;
 	}
 }
 
@@ -1092,3 +1095,15 @@ foreach ( glob( __DIR__ . '/stubs/*.php' ) ?: [] as $stub ) {
 }
 
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
+
+if ( ! function_exists( 'wp_die' ) ) {
+	function wp_die( $message = '', $title = '', $args = [] ) {
+		throw new RuntimeException( 'wp_die: ' . ( is_string( $message ) ? $message : '' ) );
+	}
+}
+
+if ( ! function_exists( 'wp_iframe' ) ) {
+	function wp_iframe( $callback, ...$args ) {
+		$GLOBALS['wp_test_iframe'] = $callback;
+	}
+}

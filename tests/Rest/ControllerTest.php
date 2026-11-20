@@ -85,9 +85,9 @@ final class ControllerTest extends TestCase {
 			}
 
 			foreach ( $registered['args'] as $endpoint ) {
-				$this->assertSame(
-					'rest_bucket_permission_check',
+				$this->assertContains(
 					$endpoint['permission_callback'][1],
+					[ 'rest_bucket_permission_check', 'rest_settings_permission_check' ],
 					$registered['route'] . ' must gate on the bucket, not just the capability'
 				);
 			}
@@ -134,6 +134,42 @@ final class ControllerTest extends TestCase {
 
 		$this->assertCount( $first, $GLOBALS['registered_rest_routes'] );
 		$this->assertNotEmpty( $GLOBALS['doing_it_wrong'] );
+	}
+
+	/**
+	 * Rewriting or removing a bucket's CORS rules changes the bucket for
+	 * every site and every uploader using it, so the browser's own
+	 * capability (an Author's upload_files by default) is not enough: it
+	 * takes manage_options as well.
+	 */
+	public function test_bucket_settings_need_manage_options(): void {
+		$this->register();
+
+		$cors = array_values( array_filter( $GLOBALS['registered_rest_routes'], static fn( array $r ): bool => str_ends_with( $r['route'], '/cors' ) ) );
+
+		$this->assertCount( 1, $cors );
+
+		foreach ( $cors[0]['args'] as $endpoint ) {
+			$this->assertSame( 'rest_settings_permission_check', $endpoint['permission_callback'][1], $endpoint['methods'] . ' /cors' );
+		}
+
+		$controller = $this->controller();
+		$request    = new WP_REST_Request();
+		$request->set_param( 'bucket', 'test-bucket' );
+
+		$GLOBALS['test_user_can'] = [ 'upload_files' ];
+		$this->assertTrue( $controller->rest_bucket_permission_check( $request ) );
+		$this->assertInstanceOf( WP_Error::class, $controller->rest_settings_permission_check( $request ) );
+
+		$GLOBALS['test_user_can'] = [ 'upload_files', 'manage_options' ];
+		$this->assertTrue( $controller->rest_settings_permission_check( $request ) );
+
+		$GLOBALS['test_user_can'] = [ 'manage_options' ];
+		$this->assertInstanceOf( WP_Error::class, $controller->rest_settings_permission_check( $request ), 'still needs the browser capability' );
+
+		$request->set_param( 'bucket', 'ab' );
+		$GLOBALS['test_user_can'] = true;
+		$this->assertInstanceOf( WP_Error::class, $controller->rest_settings_permission_check( $request ), 'and an allowed bucket' );
 	}
 
 	public function test_bucket_permission_check_rejects_a_disallowed_bucket(): void {
