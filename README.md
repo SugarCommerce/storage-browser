@@ -225,7 +225,7 @@ copy never answer each other's filters: unprefixed it is
 `sugarcommerce_storage_browser_{name}`, in a Strauss build prefixed `MyPlugin\`
 it is `myplugin_sugarcommerce_storage_browser_{name}` -- so the configuration
 filter is `sugarcommerce_storage_browser_browser_config`. `Utils\Runtime::hook( 'browser_config' )`
-gives the name, whatever the build. The ones marked *+context* run a second
+gives the name, whatever the build (it is sugarcommerce/plugin's `Runtime`). The ones marked *+context* run a second
 time as `{name}_{context}`, so a plugin can change its own browser without
 changing every browser on the site.
 

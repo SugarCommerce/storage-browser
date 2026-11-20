@@ -20,6 +20,13 @@
   "repositories": [
     {
       "type": "path",
+      "url": "../network",
+      "options": {
+        "symlink": false
+      }
+    },
+    {
+      "type": "path",
       "url": "../plugin",
       "options": {
         "symlink": false
