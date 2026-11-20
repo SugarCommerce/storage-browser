@@ -32,7 +32,7 @@ class Permissions {
 	 * customer's bucket, so this is deliberately longer than the client's own
 	 * cache lifetime rather than inheriting it.
 	 */
-	private const TTL = 86400;
+	private const int TTL = 86400;
 
 	/**
 	 * Build a probe.

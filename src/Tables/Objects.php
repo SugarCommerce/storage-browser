@@ -134,6 +134,7 @@ class Objects extends WP_List_Table {
 	 *
 	 * @return array Column definitions
 	 */
+	#[\Override]
 	public function get_columns(): array {
 		$columns = [];
 
@@ -187,6 +188,7 @@ class Objects extends WP_List_Table {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	public function prepare_items(): void {
 		$result = $this->get_api_results();
 
@@ -415,6 +417,7 @@ class Objects extends WP_List_Table {
 	 *
 	 * @return string
 	 */
+	#[\Override]
 	public function column_cb( $item ): string {
 		if ( 'file' !== $item['type'] ) {
 			return '';
@@ -469,6 +472,7 @@ class Objects extends WP_List_Table {
 	 *
 	 * @return string Column content
 	 */
+	#[\Override]
 	public function column_default( $item, $column_name ): string {
 		return $item[ $column_name ] ?? '';
 	}
@@ -511,6 +515,7 @@ class Objects extends WP_List_Table {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	protected function display_tablenav( $which ): void {
 		?>
 		<div class="tablenav <?php echo esc_attr( $which ); ?>">
@@ -665,6 +670,7 @@ class Objects extends WP_List_Table {
 	 *
 	 * @return void
 	 */
+	#[\Override]
 	public function no_items(): void {
 		echo esc_html__( 'No files or folders found.', 'sugarcommerce' );
 	}

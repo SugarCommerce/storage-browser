@@ -33,7 +33,7 @@ class Screen {
 	/**
 	 * Admin pages that edit a single post.
 	 */
-	private const EDIT_HOOKS = [ 'post.php', 'post-new.php' ];
+	private const array EDIT_HOOKS = [ 'post.php', 'post-new.php' ];
 
 	/**
 	 * Build the screen tests for one browser instance.

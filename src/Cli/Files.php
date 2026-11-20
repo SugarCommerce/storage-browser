@@ -32,7 +32,7 @@ interface Files {
 	 *
 	 * Files already on the product are skipped rather than duplicated.
 	 */
-	public const APPEND = 'append';
+	public const string APPEND = 'append';
 
 	/**
 	 * Make the product's list match the incoming one.
@@ -42,7 +42,7 @@ interface Files {
 	 * against it -- pointing at the file the customer bought. Rows the
 	 * incoming list does not name are removed.
 	 */
-	public const SYNC = 'sync';
+	public const string SYNC = 'sync';
 
 	/**
 	 * Discard the existing list and write the incoming one.
@@ -50,7 +50,7 @@ interface Files {
 	 * Identities are not preserved. On WooCommerce that revokes access for
 	 * anyone holding a permission against the old rows.
 	 */
-	public const REPLACE = 'replace';
+	public const string REPLACE = 'replace';
 
 	/**
 	 * What this platform calls the thing files belong to.

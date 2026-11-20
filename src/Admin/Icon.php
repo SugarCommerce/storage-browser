@@ -31,7 +31,7 @@ final class Icon {
 	/**
 	 * The class every icon carries.
 	 */
-	public const ICON_CLASS = 'arraypress-icon';
+	public const string ICON_CLASS = 'arraypress-icon';
 
 	/**
 	 * The icons, by what they stand for, as Heroicon file names.
@@ -41,7 +41,7 @@ final class Icon {
 	 *
 	 * @var array<string, string>
 	 */
-	private const ICONS = [
+	private const array ICONS = [
 		'bucket'   => 'circle-stack',
 		'folder'   => 'folder',
 		'image'    => 'photo',

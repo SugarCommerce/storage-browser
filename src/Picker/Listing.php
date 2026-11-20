@@ -32,17 +32,17 @@ final class Listing {
 	/**
 	 * Keys a request.
 	 */
-	public const PAGE = 1000;
+	public const int PAGE = 1000;
 
 	/**
 	 * Requests one search makes before it stops to answer.
 	 */
-	public const SEARCH_PAGES = 10;
+	public const int SEARCH_PAGES = 10;
 
 	/**
 	 * Matches one search answer carries before it stops to answer.
 	 */
-	public const SEARCH_MATCHES = 200;
+	public const int SEARCH_MATCHES = 200;
 
 	/**
 	 * One page of a folder, or of a search beneath it.

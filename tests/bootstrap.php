@@ -49,6 +49,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 		. "\t\tpublic function display() {}\n"
 		. "\t\tpublic function get_columns() { return []; }\n"
 		. "\t\tpublic function prepare_items() {}\n"
+		. "\t\tprotected function column_default( \$item, \$column_name ) {}\n"
+		. "\t\tprotected function column_cb( \$item ) {}\n"
+		. "\t\tprotected function display_tablenav( \$which ) {}\n"
+		. "\t\tpublic function no_items() {}\n"
 		. "\t}\n}\n"
 	);
 

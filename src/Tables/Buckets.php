@@ -65,6 +65,7 @@ class Buckets extends WP_List_Table {
 	/**
 	 * Get columns
 	 */
+	#[\Override]
 	public function get_columns() {
 		return [
 			'name'    => __( 'Bucket Name', 'sugarcommerce' ),
@@ -75,6 +76,7 @@ class Buckets extends WP_List_Table {
 	/**
 	 * Prepare items
 	 */
+	#[\Override]
 	public function prepare_items() {
 		$this->_column_headers = [ $this->get_columns(), [], [] ];
 
@@ -115,6 +117,7 @@ class Buckets extends WP_List_Table {
 	/**
 	 * Column default
 	 */
+	#[\Override]
 	public function column_default( $item, $column_name ) {
 		return $item[ $column_name ] ?? '';
 	}
@@ -198,6 +201,7 @@ class Buckets extends WP_List_Table {
 	 *
 	 * @param string $which Which tablenav ('top' or 'bottom')
 	 */
+	#[\Override]
 	public function display_tablenav( $which ) {
 		?>
 		<div class="tablenav <?php echo esc_attr( $which ); ?>">
@@ -256,6 +260,7 @@ class Buckets extends WP_List_Table {
 	/**
 	 * No items found text
 	 */
+	#[\Override]
 	public function no_items() {
 		echo esc_html__( 'No buckets found.', 'sugarcommerce' );
 	}

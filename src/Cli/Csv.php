@@ -33,7 +33,7 @@ class Csv {
 	/**
 	 * Columns every file must supply.
 	 */
-	private const REQUIRED = [ 'file_name', 'file_path' ];
+	private const array REQUIRED = [ 'file_name', 'file_path' ];
 
 	/**
 	 * Accepted names for the first column, which references the post.
@@ -41,7 +41,7 @@ class Csv {
 	 * Spreadsheets exported from either platform tend to lead with one of
 	 * these, and insisting on a single spelling only invites a rename step.
 	 */
-	private const REFERENCE = [ 'sku', 'id', 'product', 'download', 'reference' ];
+	private const array REFERENCE = [ 'sku', 'id', 'product', 'download', 'reference' ];
 
 	/**
 	 * Read and group a CSV.

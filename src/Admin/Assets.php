@@ -32,12 +32,12 @@ class Assets {
 	 * One per page regardless of how many browsers are on it, which is why it
 	 * carries no instance-specific state beyond the identifiers.
 	 */
-	private const GLOBAL_CONFIG = 'browser-config';
+	private const string GLOBAL_CONFIG = 'browser-config';
 
 	/**
 	 * Admin pages that edit a single post.
 	 */
-	private const EDIT_HOOKS = [ 'post.php', 'post-new.php' ];
+	private const array EDIT_HOOKS = [ 'post.php', 'post-new.php' ];
 
 	/**
 	 * Integration scripts, by the post type whose editor they belong to.
@@ -45,7 +45,7 @@ class Assets {
 	// Named for the post type rather than the plugin: the handles and
 	// filenames end up in page source and in a distributed ZIP, and neither
 	// needs to carry someone else's trademark.
-	private const INTEGRATIONS = [
+	private const array INTEGRATIONS = [
 		'product'  => [ 'browser-wc', 'wc' ],
 		'download' => [ 'browser-edd', 'edd' ],
 	];
