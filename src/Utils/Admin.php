@@ -93,7 +93,11 @@ class Admin {
 		<div class="s3-connection-test">
 			<h4><?php esc_html_e( 'Connection Test', 'sugarcommerce' ); ?></h4>
 			<p>
-				<button type="button" id="<?php echo esc_attr( $button_id ); ?>" class="button button-primary s3-test-connection">
+				<?php
+				// Marked with the build's script handle: another plugin's
+				// copy of the script on the same page leaves it alone.
+				?>
+				<button type="button" id="<?php echo esc_attr( $button_id ); ?>" class="button button-primary s3-test-connection" data-storage-browser="<?php echo esc_attr( Runtime::handle( 'connection' ) ); ?>">
 					<?php esc_html_e( 'Test Connection', 'sugarcommerce' ); ?>
 				</button>
 				<span id="<?php echo esc_attr( $result_id ); ?>" class="s3-test-result"></span>

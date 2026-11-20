@@ -49,7 +49,7 @@ final class BrowserTest extends TestCase {
 
 		foreach ( [
 			'media_upload_tabs',
-			'media_upload_s3_r2_edd',
+			'media_upload_sugarcommerce_storage_browser_tab_r2_edd',
 			'media_view_strings',
 			'admin_enqueue_scripts',
 			'rest_api_init',
@@ -74,7 +74,7 @@ final class BrowserTest extends TestCase {
 		$browser = $this->browser( null, [] );
 
 		$this->assertSame( 'r2', $browser->get_hook_suffix() );
-		$this->assertSame( 's3_r2', $browser->get_tab_id() );
+		$this->assertSame( 'sugarcommerce_storage_browser_tab_r2', $browser->get_tab_id() );
 	}
 
 	/**

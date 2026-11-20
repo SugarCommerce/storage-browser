@@ -164,7 +164,7 @@ aborts the upload in storage.
 Dropping the same file again -- after a reload, a closed tab, a part that
 would not go -- carries on from the parts storage kept: the file's name,
 size and modified time find the upload. Uploads belong to the user who
-started them. The thresholds are in `S3BrowserGlobalConfig.multipart`
+started them. The thresholds are in the scripts' configuration, `multipart`
 (`threshold`, `concurrency`, `signBatch`, `retries`), which the
 `browser_global_config` filter changes.
 
@@ -264,21 +264,27 @@ echo $picker->button( 'product-file', [
 	'returns' => 'address',           // or 'path' (bucket/key) or 'key'
 ] );
 
-// Or only load it, and open it from your own script.
+// Or only load it, and open it from your own script -- which needs the
+// script's handle, the key of this build's picker on the page.
 $picker->enqueue();
+wp_localize_script( 'my-script', 'MyScript', [ 'picker' => Picker::handle() ] );
 ```
 
 ```js
-const file = await window.SugarCommerceStoragePicker.open( { accept: [ 'zip' ] } );
+const picker = window.SugarCommerceStorageBrowser[ MyScript.picker ];
+const file = await picker.open( { accept: [ 'zip' ] } );
 // { bucket, key, name, size, mimeType, address: 's3://bucket/key' }, or null when dismissed
 
-window.SugarCommerceStoragePicker.attach( button, { input: '#file-url', name: '#file-name' } );
+picker.attach( button, { input: '#file-url', name: '#file-name' } );
+picker.attachAll( panel ); // the buttons in a panel drawn later
 ```
 
-Any button with `data-storage-picker` attaches itself, now or when a repeater
-adds it later: `data-storage-picker-target` (the input), `-name`, `-returns`,
-`-accept` (comma separated), `-bucket`, `-prefix` and `-source` (which browser,
-when a page has two). A chosen file fires `input` and `change` on the input,
+`button()` draws a button that attaches itself, now or when a repeater adds it
+later: `data-storage-picker` is the script's handle -- each plugin's copy
+attaches only the buttons its own build drew -- with
+`data-storage-picker-target` (the input), `-name`, `-returns`, `-accept`
+(comma separated), `-bucket`, `-prefix` and `-source` (which browser, when a
+page has two). A chosen file fires `input` and `change` on the input,
 and `storage-picker:chosen` on the button with the file as its `detail`.
 
 The dialog is the family's: a native `<dialog>`, focus kept in the search box,
@@ -306,7 +312,9 @@ A field library should not have to depend on a bucket browser to offer one.
 a callable that loads the script, and `protocols` (`[ 's3' ]`, the scheme its
 addresses use, so a field that cleans its value as a URL keeps `s3://…`) --
 and the script registers the same id in `window.sugarcommerceFileSources`, a
-registry that names no package:
+registry that names no package. The id is the build's
+(`sugarcommerce_storage_browser_r2_shop` unprefixed), so two plugins bundling
+this library offer two sources rather than one overwriting the other:
 
 ```php
 // In the plugin that owns both, where the field library asks for sources.
@@ -317,6 +325,30 @@ add_filter( $fields_file_sources_hook, fn( array $sources ) => $sources + [ $pic
 const chosen = await window.sugarcommerceFileSources[ id ].pick( { accept: [ 'zip' ], returns: 'address' } );
 // { value: 's3://bucket/key', name, bucket, key, size, … }, or null
 ```
+
+## Two plugins, one page
+
+Several plugins may bundle their own copy of this library (Strauss-prefixed)
+and be active on one site, even on one admin page. Every name a copy puts on
+the page is its build's own:
+
+* Each script reads its configuration from `window.SugarCommerceStorageBrowser`,
+  keyed by its own handle (`Runtime::handle( 'browser' )` and so on), which it
+  finds from the id WordPress gives its `<script>` element, `{handle}-js`.
+  An entry holds `global` (`browser_global_config`), `browser` in the browser
+  frame (`browser_config`), `pickers` and the picker's `open`, `attach` and
+  `attachAll`. The registry's name is shared; its keys are not.
+* The browser starts only where its build drew one -- the container carries
+  `data-storage-browser="{handle}"` -- and keeps its "started" flag in its own
+  entry. The Test Connection button and the picker's buttons are marked the
+  same way, and each copy binds only its own.
+* The media tab (`Browser::get_tab_id()`, `sugarcommerce_storage_browser_tab_r2_shop`
+  unprefixed), the picker's source id, the insert request's nonce action, the
+  REST namespace, hooks, cache keys and the clear-up's cron hook are named
+  from the build.
+* `window.S3BrowserHost` is the one name the library does not own: the host
+  page defines it, and every copy that opens a frame on that page hands its
+  files to it.
 
 ## The scripts
 

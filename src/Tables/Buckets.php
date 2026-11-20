@@ -39,6 +39,13 @@ class Buckets extends WP_List_Table {
 	private $provider_id;
 
 	/**
+	 * The media tab this table is drawn in, for its own links.
+	 *
+	 * @var string
+	 */
+	private string $tab = '';
+
+	/**
 	 * The buckets this browser may show; empty for any.
 	 *
 	 * @var string[]
@@ -59,6 +66,7 @@ class Buckets extends WP_List_Table {
 
 		$this->client      = $args['client'];
 		$this->provider_id = $args['provider_id'];
+		$this->tab         = (string) ( $args['tab'] ?? '' );
 		$this->allowed     = array_values( array_map( 'strval', (array) ( $args['allowed'] ?? [] ) ) );
 	}
 
@@ -239,7 +247,7 @@ class Buckets extends WP_List_Table {
 						$url     = add_query_arg( [
 							'chromeless' => 1,
 							'post_id'    => $post_id,
-							'tab'        => 's3_' . $this->provider_id,
+							'tab'        => $this->tab,
 							'view'       => 'buckets',
 							'marker'     => urlencode( $marker ),
 						] );

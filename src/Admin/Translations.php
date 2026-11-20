@@ -3,7 +3,7 @@
  * Browser Translations
  *
  * The strings the browser's JavaScript needs, grouped the way it reads them:
- * S3BrowserGlobalConfig.i18n.<group>.<key>.
+ * its configuration's `i18n.<group>.<key>` (assets/js/lib/config.js).
  *
  * @package     SugarCommerce\StorageBrowser\Admin
  * @copyright   Copyright (c) 2025, ArrayPress Limited

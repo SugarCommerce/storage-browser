@@ -15,7 +15,7 @@ const TiB = 1099511627776;
 /**
  * The multipart settings, with defaults for a page that sent none.
  *
- * @param {Object} given S3BrowserGlobalConfig.multipart.
+ * @param {Object} given The global configuration's `multipart` (lib/config).
  * @return {{threshold: number, singlePutMax: number, maxSize: number, concurrency: number, signBatch: number, retries: number}} Settings.
  */
 export function partSettings( given = {} ) {

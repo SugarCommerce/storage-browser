@@ -204,8 +204,9 @@ class MediaLibrary {
 
 		[ $view, $bucket, $prefix ] = $this->requested();
 
-		// Output content
-		echo '<div class="s3-browser-container">';
+		// Marked with the build's script handle: the browser script starts
+		// only where its own build drew a browser.
+		printf( '<div class="s3-browser-container" data-storage-browser="%s">', esc_attr( Assets::browser_handle() ) );
 
 		// Pass the resolved bucket rather than letting the upload zone read
 		// $_GET again: when a default bucket is configured the browser enters
@@ -465,6 +466,7 @@ class MediaLibrary {
 		$list_table = new Buckets( [
 			'client'      => $this->client,
 			'provider_id' => $this->config->provider_id,
+			'tab'         => $this->config->tab_id(),
 			'allowed'     => $this->listable_buckets(),
 		] );
 

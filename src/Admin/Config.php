@@ -68,10 +68,16 @@ class Config {
 	/**
 	 * The media uploader tab id for this instance.
 	 *
-	 * @return string
+	 * Named from the build too: it is the key in `media_upload_tabs`, the
+	 * `media_upload_{tab}` action and the media frame's state, all shared
+	 * by every plugin on the site. Two plugins bundling this library for
+	 * the same provider and context would otherwise draw one tab, and each
+	 * render its browser into the other's.
+	 *
+	 * @return string `sugarcommerce_storage_browser_tab_r2_edd` unprefixed.
 	 */
 	public function tab_id(): string {
-		return 's3_' . $this->hook_suffix();
+		return Runtime::key( 'tab_' . $this->hook_suffix() );
 	}
 
 	/**

@@ -13,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 use SugarCommerce\Plugin\Assets as AssetFiles;
 use SugarCommerce\S3\Account;
+use SugarCommerce\StorageBrowser\Admin\Assets;
 use SugarCommerce\StorageBrowser\Browser;
 use SugarCommerce\StorageBrowser\Rest\Controller;
 
@@ -21,6 +22,7 @@ final class AssetsTest extends TestCase {
 	protected function setUp(): void {
 		wp_test_reset();
 		wp_test_reset_scripts();
+		( new ReflectionProperty( Assets::class, 'configured' ) )->setValue( null, [] );
 		require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
 		( new ReflectionProperty( Controller::class, 'claimed_routes' ) )->setValue( null, [] );
 		AssetFiles::clear_cache();
@@ -36,21 +38,35 @@ final class AssetsTest extends TestCase {
 		return wp_script_is( $handle );
 	}
 
+	/**
+	 * What was printed in front of a script.
+	 *
+	 * @param string $handle The script.
+	 *
+	 * @return string[]
+	 */
+	private static function inline( string $handle ): array {
+		return array_column(
+			array_filter( $GLOBALS['wp_test_scripts']['script'][ $handle ]['inline'], static fn( array $row ): bool => 'before' === $row[0] ),
+			1
+		);
+	}
+
 	public function test_the_media_frame_loads_a_browser_only_in_its_own_tab(): void {
 		$shop  = $this->assets( 'shop' );
 		$other = $this->assets( 'other' );
 
-		$_GET['tab'] = 's3_r2_shop';
+		$_GET['tab'] = 'sugarcommerce_storage_browser_tab_r2_shop';
 		$shop->enqueue_browser_assets( 'media-upload-popup' );
 		$other->enqueue_browser_assets( 'media-upload-popup' );
 
 		$this->assertTrue( self::loaded( 'sugarcommerce-storage-browser-browser' ) );
-		$this->assertArrayHasKey( 's3BrowserConfig', $GLOBALS['wp_test_scripts']['script']['sugarcommerce-storage-browser-browser']['localized'] );
-		$this->assertSame(
-			'r2_shop',
-			$GLOBALS['wp_test_scripts']['script']['sugarcommerce-storage-browser-browser-config']['localized']['S3BrowserGlobalConfig']['providerId'],
-			'Another browser configured the page.'
-		);
+
+		$inline = self::inline( 'sugarcommerce-storage-browser-browser' );
+
+		$this->assertCount( 2, $inline, 'The page global and the frame\'s own, once each.' );
+		$this->assertStringContainsString( '["global"]={"providerId":"r2_shop"', $inline[0] );
+		$this->assertStringContainsString( '["browser"]={', $inline[1] );
 
 		wp_test_reset_scripts();
 		$_GET['tab'] = 'library';
@@ -60,7 +76,7 @@ final class AssetsTest extends TestCase {
 	}
 
 	public function test_the_built_browser_needs_no_jquery(): void {
-		$_GET['tab'] = 's3_r2_shop';
+		$_GET['tab'] = 'sugarcommerce_storage_browser_tab_r2_shop';
 		$this->assets( 'shop' )->enqueue_browser_assets( 'media-upload-popup' );
 
 		$script = $GLOBALS['wp_test_scripts']['script']['sugarcommerce-storage-browser-browser'];
@@ -68,7 +84,6 @@ final class AssetsTest extends TestCase {
 		$this->assertStringEndsWith( '/assets/build/browser.js', $script['src'] );
 		$this->assertNotContains( 'jquery', $script['deps'] );
 		$this->assertContains( 'wp-api-fetch', $script['deps'] );
-		$this->assertContains( 'sugarcommerce-storage-browser-browser-config', $script['deps'] );
 		$this->assertSame( 'sugarcommerce', $script['translations'] );
 	}
 }

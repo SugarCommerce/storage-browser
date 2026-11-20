@@ -1,30 +1,73 @@
 /**
  * What PHP handed the scripts.
  *
- * The only module that reads the page's globals. `S3BrowserGlobalConfig` is
- * one per page (Admin\Assets::enqueue_global_config(), filtered by
- * `browser_global_config`); `s3BrowserConfig` is the browser frame's own
- * (filtered by `browser_config`), and carries the strings
- * `browser_translations` filters -- which is why those strings come from
- * PHP rather than from `__()`: a plugin may change them.
+ * The only module that reads the page's configuration. Each build of this
+ * library -- the plain one, or a Strauss-prefixed copy inside another plugin
+ * -- publishes into `window.SugarCommerceStorageBrowser`, keyed by its
+ * script's handle (Admin\Assets, Picker\Picker). Two plugins' copies load
+ * two scripts, and a shared bare global would leave whichever printed last
+ * owning the REST URL, nonce and insert token for both.
+ *
+ * An entry holds `global` (Admin\Assets::global_config(), filtered by
+ * `browser_global_config`), `browser` in the browser frame (filtered by
+ * `browser_config`, with the strings `browser_translations` filters -- which
+ * is why those come from PHP rather than `__()`), `pickers` for the picker,
+ * and whatever the script itself keeps there.
+ *
+ * A script finds its own entry from the id WordPress stamps on its <script>
+ * element, "{handle}-js".
  */
 
 /**
- * The page's shared configuration.
+ * The registry's name. Shared by every build; its keys are not.
+ */
+export const REGISTRY = 'SugarCommerceStorageBrowser';
+
+/**
+ * The handle a script's element names.
  *
- * @return {Object} S3BrowserGlobalConfig, or an empty object.
+ * @param {Element|null} element The <script> element, or null.
+ * @return {string} The handle, or '' without one.
+ */
+export const handleOf = ( element ) =>
+	element && element.id ? element.id.replace( /-js$/, '' ) : '';
+
+// Read while the script runs. Once it has, document.currentScript is null.
+const script = document.currentScript;
+
+/**
+ * This script's handle: its build's, and its key in the registry.
+ */
+export const handle = handleOf( script );
+
+/**
+ * A build's entry in the registry, made when there is none yet.
+ *
+ * @param {string} key A script handle; this script's by default.
+ * @return {Object} The entry.
+ */
+export function entryFor( key = handle ) {
+	const registry = ( window[ REGISTRY ] = window[ REGISTRY ] || {} );
+
+	return ( registry[ key ] = registry[ key ] || {} );
+}
+
+/**
+ * The page's configuration for this build.
+ *
+ * @return {Object} The entry's `global`, or an empty object.
  */
 export function globalConfig() {
-	return window.S3BrowserGlobalConfig || {};
+	return entryFor().global || {};
 }
 
 /**
  * The browser frame's own configuration.
  *
- * @return {Object} s3BrowserConfig, or an empty object.
+ * @return {Object} The entry's `browser`, or an empty object.
  */
 export function browserConfig() {
-	return window.s3BrowserConfig || {};
+	return entryFor().browser || {};
 }
 
 /**

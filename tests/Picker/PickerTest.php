@@ -39,6 +39,7 @@ final class PickerTest extends TestCase {
 		require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
 		( new ReflectionProperty( Controller::class, 'claimed_routes' ) )->setValue( null, [] );
 		AssetFiles::clear_cache();
+		( new ReflectionProperty( Picker::class, 'added' ) )->setValue( null, [] );
 
 		$this->s3 = FakeS3::install( 'files' );
 
@@ -216,7 +217,7 @@ final class PickerTest extends TestCase {
 		$this->assertSame( 'sugarcommerce', $script['translations'] );
 		$this->assertCount( 1, $script['inline'] );
 		$this->assertSame( 'before', $script['inline'][0][0] );
-		$this->assertStringContainsString( 'window.SugarCommerceStoragePickers["r2_shop"] = {', $script['inline'][0][1] );
+		$this->assertStringContainsString( 'window.SugarCommerceStorageBrowser["sugarcommerce-storage-browser-picker"].pickers["sugarcommerce_storage_browser_r2_shop"]={', $script['inline'][0][1] );
 		$this->assertTrue( wp_style_is( 'sugarcommerce-storage-browser-picker' ) );
 	}
 
@@ -237,12 +238,12 @@ final class PickerTest extends TestCase {
 			'label'   => 'Pick <b>one</b>',
 		] );
 
-		$this->assertStringContainsString( 'data-storage-picker="1"', $html );
+		$this->assertStringContainsString( 'data-storage-picker="sugarcommerce-storage-browser-picker"', $html );
 		$this->assertStringContainsString( 'data-storage-picker-target="#file-url"', $html );
 		$this->assertStringContainsString( 'data-storage-picker-name="#file-name"', $html );
 		$this->assertStringContainsString( 'data-storage-picker-accept="zip,wav"', $html );
 		$this->assertStringContainsString( 'data-storage-picker-returns="address"', $html );
-		$this->assertStringContainsString( 'data-storage-picker-source="r2_shop"', $html );
+		$this->assertStringContainsString( 'data-storage-picker-source="sugarcommerce_storage_browser_r2_shop"', $html );
 		$this->assertStringContainsString( 'Pick &lt;b&gt;one&lt;/b&gt;', $html );
 		$this->assertStringNotContainsString( 'data-storage-picker-bucket', $html );
 	}
@@ -253,7 +254,7 @@ final class PickerTest extends TestCase {
 		$this->assertSame( [ 'id', 'label', 'icon', 'enqueue', 'protocols' ], array_keys( $source ) );
 		// A field that cleans its value as a URL keeps s3:// only when told.
 		$this->assertSame( [ 's3' ], $source['protocols'] );
-		$this->assertSame( 'r2_shop', $source['id'] );
+		$this->assertSame( 'sugarcommerce_storage_browser_r2_shop', $source['id'] );
 		$this->assertIsCallable( $source['enqueue'] );
 		$this->assertTrue( ( $source['enqueue'] )() );
 	}

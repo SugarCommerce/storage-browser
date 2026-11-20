@@ -20,10 +20,10 @@ final class TranslationsTest extends TestCase {
 	 * Every translation key the shipped JavaScript reads.
 	 *
 	 * Two forms appear. Most references are fully qualified --
-	 * s3BrowserConfig.i18n.buckets.detailsTitle -- but a function that uses
+	 * browserConfig().i18n.buckets.detailsTitle -- but a function that uses
 	 * one group repeatedly aliases it first:
 	 *
-	 *     var i18n = s3BrowserConfig.i18n.buckets;
+	 *     var i18n = browserConfig().i18n.buckets;
 	 *     i18n.corsSetupSuccess.replace( ... )
 	 *
 	 * so a bare i18n.<key> has to be resolved against the alias in scope, or

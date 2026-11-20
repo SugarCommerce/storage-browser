@@ -40,7 +40,7 @@ export function listenForInserts( insert, self = window ) {
 /**
  * The browser frame's address.
  *
- * @param {Object} config S3BrowserGlobalConfig.
+ * @param {Object} config The build's global configuration (lib/config): baseUrl, tabId, defaultBucket.
  * @param {Object} extra  More query arguments: post_id, s3_host.
  * @return {string} URL.
  */
@@ -48,7 +48,7 @@ export function frameUrl( config, extra = {} ) {
 	const bucket = config.favoriteBucket || config.defaultBucket;
 	const query = new URLSearchParams( {
 		chromeless: '1',
-		tab: `s3_${ config.providerId }`,
+		tab: config.tabId,
 		...( bucket ? { bucket, view: 'objects' } : { view: 'buckets' } ),
 		...extra,
 	} );
@@ -80,8 +80,51 @@ export function addBrowserTab( {
 
 	const config = globalConfig();
 
+	// The state and its content mode are this build's tab id, and the
+	// rendering is a closure rather than a method: another plugin's copy may
+	// extend the same frames, and a shared mode or method name would have
+	// one copy's tab render the other's browser.
+	const mode = `${ config.tabId }-content`;
 	const Select = media.view.MediaFrame.Select;
 	let shared = null;
+
+	/**
+	 * Show the browser in a frame: the page's one browser, made the first
+	 * time it is wanted.
+	 *
+	 * @param {Object} frame The media frame.
+	 */
+	const render = ( frame ) => {
+		if ( shared ) {
+			frame.content.set( shared );
+			return;
+		}
+
+		const view = new media.View( {
+			controller: frame,
+			className: 's3-browser-frame-wrapper',
+			tagName: 'div',
+		} );
+		const src = frameUrl( config, extra( frame ) );
+
+		view.render = function () {
+			const iframe = document.createElement( 'iframe' );
+
+			iframe.src = src;
+			iframe.className = 's3-browser-frame';
+			iframe.title = config.providerName || 'S3 Files';
+			iframe.style.cssText =
+				'width:100%;height:100%;border:none;min-height:500px;';
+			this.el.replaceChildren( iframe );
+			this.el.style.cssText =
+				'height:100%;min-height:500px;width:100%;overflow:hidden;';
+
+			return this;
+		};
+
+		frame.content.set( view );
+		shared = view;
+	};
 
 	media.view.MediaFrame.Select = Select.extend( {
 		initialize( ...args ) {
@@ -89,48 +132,16 @@ export function addBrowserTab( {
 
 			this.states.add( [
 				new media.controller.State( {
-					id: `s3_${ config.providerId }`,
+					id: config.tabId,
 					title: config.providerName || 'S3 Files',
 					priority: 60,
-					content: 's3-content',
+					content: mode,
 					menu: 'default',
 				} ),
 			] );
 
-			this.on( 'content:render:s3-content', this.s3ContentRender, this );
+			this.on( `content:render:${ mode }`, () => render( this ) );
 			this.on( 'open', () => onOpen( this ) );
-		},
-
-		s3ContentRender() {
-			if ( shared ) {
-				this.content.set( shared );
-				return;
-			}
-
-			const view = new media.View( {
-				controller: this,
-				className: 's3-browser-frame-wrapper',
-				tagName: 'div',
-			} );
-			const src = frameUrl( config, extra( this ) );
-
-			view.render = function () {
-				const frame = document.createElement( 'iframe' );
-
-				frame.src = src;
-				frame.className = 's3-browser-frame';
-				frame.title = config.providerName || 'S3 Files';
-				frame.style.cssText =
-					'width:100%;height:100%;border:none;min-height:500px;';
-				this.el.replaceChildren( frame );
-				this.el.style.cssText =
-					'height:100%;min-height:500px;width:100%;overflow:hidden;';
-
-				return this;
-			};
-
-			this.content.set( view );
-			shared = view;
 		},
 	} );
 

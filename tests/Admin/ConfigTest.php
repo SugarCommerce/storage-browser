@@ -22,7 +22,7 @@ final class ConfigTest extends TestCase {
 
 	public function test_context_qualifies_the_hook_suffix(): void {
 		$this->assertSame( 'r2_edd', $this->config()->hook_suffix() );
-		$this->assertSame( 's3_r2_edd', $this->config()->tab_id() );
+		$this->assertSame( 'sugarcommerce_storage_browser_tab_r2_edd', $this->config()->tab_id() );
 	}
 
 	public function test_without_a_context_the_provider_stands_alone(): void {
@@ -30,11 +30,20 @@ final class ConfigTest extends TestCase {
 
 		$this->assertFalse( $config->has_context() );
 		$this->assertSame( 'r2', $config->hook_suffix() );
-		$this->assertSame( 's3_r2', $config->tab_id() );
+		$this->assertSame( 'sugarcommerce_storage_browser_tab_r2', $config->tab_id() );
 	}
 
 	public function test_two_contexts_never_collide(): void {
 		$this->assertNotSame( $this->config( 'edd' )->tab_id(), $this->config( 'woocommerce' )->tab_id() );
+	}
+
+	/**
+	 * The tab is a key in media_upload_tabs and a media_upload_{tab} action:
+	 * every plugin's. Two plugins bundling this library for one provider and
+	 * context must still draw two tabs, so the build names it too.
+	 */
+	public function test_the_tab_is_named_from_the_build(): void {
+		$this->assertStringStartsWith( Runtime::key( 'tab_' ), $this->config()->tab_id() );
 	}
 
 	/**

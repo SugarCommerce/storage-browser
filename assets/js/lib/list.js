@@ -38,7 +38,7 @@ export function navigateTo( params ) {
 		...params,
 		chromeless: 1,
 		post_id: browserConfig().postId || 0,
-		tab: `s3_${ globalConfig().providerId }`,
+		tab: globalConfig().tabId,
 	} );
 
 	// Opened by a host page, which has no post to be recognised by. Carried

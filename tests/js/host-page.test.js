@@ -9,16 +9,17 @@ import {
 	frameUrl,
 	listenForInserts,
 } from '../../assets/js/lib/host-page';
+import { entryFor, REGISTRY } from '../../assets/js/lib/config';
 
 afterEach( () => {
-	delete window.S3BrowserGlobalConfig;
+	delete window[ REGISTRY ];
 } );
 
 const post = ( data ) =>
 	window.dispatchEvent( new MessageEvent( 'message', { data } ) );
 
 test( 'an insert with the page token is carried out; any other is ignored', () => {
-	window.S3BrowserGlobalConfig = { insertToken: 'secret' };
+	entryFor().global = { insertToken: 'secret' };
 
 	const insert = vi.fn();
 	const stop = listenForInserts( insert );
@@ -47,7 +48,7 @@ test( 'an insert with the page token is carried out; any other is ignored', () =
 } );
 
 test( 'a page with no token hears nobody', () => {
-	window.S3BrowserGlobalConfig = {};
+	entryFor().global = {};
 
 	const insert = vi.fn();
 	listenForInserts( insert );
@@ -66,15 +67,15 @@ test( 'the frame opens on the default bucket, or on the bucket list', () => {
 		frameUrl(
 			{
 				baseUrl: '/wp-admin/media-upload.php',
-				providerId: 'r2_shop',
+				tabId: 'sugarcommerce_storage_browser_tab_r2_shop',
 				defaultBucket: 'files',
 			},
 			{ s3_host: '1' }
 		)
 	).toBe(
-		'/wp-admin/media-upload.php?chromeless=1&tab=s3_r2_shop&bucket=files&view=objects&s3_host=1'
+		'/wp-admin/media-upload.php?chromeless=1&tab=sugarcommerce_storage_browser_tab_r2_shop&bucket=files&view=objects&s3_host=1'
 	);
-	expect( frameUrl( { baseUrl: '/m', providerId: 'x' } ) ).toBe(
-		'/m?chromeless=1&tab=s3_x&view=buckets'
+	expect( frameUrl( { baseUrl: '/m', tabId: 'x' } ) ).toBe(
+		'/m?chromeless=1&tab=x&view=buckets'
 	);
 } );

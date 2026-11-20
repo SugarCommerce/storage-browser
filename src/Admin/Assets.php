@@ -27,12 +27,15 @@ use SugarCommerce\Plugin\Assets as AssetFiles;
 class Assets {
 
 	/**
-	 * Handle for the shared configuration script.
+	 * The page global the scripts find their configuration in.
 	 *
-	 * One per page regardless of how many browsers are on it, which is why it
-	 * carries no instance-specific state beyond the identifiers.
+	 * Shared by every build on purpose; its keys are not. Each script's entry
+	 * is keyed by the script's own handle, which Runtime::handle() names for
+	 * the build, so two plugins' copies on one page each read their own REST
+	 * URL, nonce and strings. A script finds its entry from the id WordPress
+	 * gives its element, "{handle}-js" (assets/js/lib/config.js).
 	 */
-	private const string GLOBAL_CONFIG = 'browser-config';
+	public const string REGISTRY = 'SugarCommerceStorageBrowser';
 
 	/**
 	 * Admin pages that edit a single post.
@@ -56,6 +59,23 @@ class Assets {
 	 * @var bool
 	 */
 	private bool $browser_loaded = false;
+
+	/**
+	 * What has been handed to which script in this request: handle => parts.
+	 *
+	 * Static because two browsers of one build share a script, and the first
+	 * to load it configures it, as before.
+	 *
+	 * @var array<string, array<string, true>>
+	 */
+	private static array $configured = [];
+
+	/**
+	 * The page's configuration, once built.
+	 *
+	 * @var array|null
+	 */
+	private ?array $global = null;
 
 	/**
 	 * Build the asset loader for one browser instance.
@@ -102,10 +122,17 @@ class Assets {
 			return;
 		}
 
-		$config_handle = $this->enqueue_global_config();
-
 		AssetFiles::enqueue_style( Runtime::handle( 'admin' ), __FILE__, 'css/admin.css' );
-		AssetFiles::enqueue_built_script( Runtime::handle( 'connection' ), __FILE__, 'connection', [ $config_handle ] );
+		$this->enqueue_script( Runtime::handle( 'connection' ), 'connection' );
+	}
+
+	/**
+	 * The browser script's handle, which also marks the browser it draws.
+	 *
+	 * @return string
+	 */
+	public static function browser_handle(): string {
+		return Runtime::handle( 'browser' );
 	}
 
 	/**
@@ -157,26 +184,15 @@ class Assets {
 	}
 
 	/**
-	 * Register and localize the shared configuration script.
+	 * What every script of this browser is told: which instance, where its
+	 * routes are, the token an insert request carries, upload limits.
 	 *
-	 * @return string Handle, for depending on.
+	 * Filtered by `browser_global_config`; built once per instance.
+	 *
+	 * @return array
 	 */
-	public function enqueue_global_config(): string {
-		$handle = Runtime::handle( self::GLOBAL_CONFIG );
-
-		if ( ! wp_script_is( $handle, 'registered' ) ) {
-			wp_register_script( $handle, false );
-		}
-
-		if ( ! wp_script_is( $handle ) ) {
-			wp_enqueue_script( $handle, false, [], '1.0', true );
-		}
-
-		if ( wp_script_is( $handle, 'localized' ) ) {
-			return $handle;
-		}
-
-		wp_localize_script( $handle, 'S3BrowserGlobalConfig', $this->config->filter(
+	public function global_config(): array {
+		return $this->global ??= (array) $this->config->filter(
 			'browser_global_config',
 			[
 				'providerId'        => $this->config->hook_suffix(),
@@ -186,13 +202,19 @@ class Assets {
 				// carries the context too. The script needs the bare type to
 				// show CORS in the shape that provider's own console takes.
 				'providerType'      => $this->config->provider_id,
+
+				// The media tab, named for the build as well as the
+				// instance: what the frame opens and what a link stays in.
+				'tabId'             => $this->config->tab_id(),
 				'baseUrl'           => admin_url( 'media-upload.php' ),
 				// Where to post an insert request, and a token proving it came
 				// from this site's own browser. The frame the browser runs in
 				// can have an opaque origin, so the receiving page cannot
-				// identify the sender by origin alone.
+				// identify the sender by origin alone. The nonce's action is
+				// the build's, so another plugin's copy on the same page holds
+				// a different token and never acts on this browser's request.
 				'adminOrigin'       => $this->admin_origin(),
-				'insertToken'       => wp_create_nonce( 's3_browser_insert' ),
+				'insertToken'       => wp_create_nonce( Runtime::key( 'insert' ) ),
 				// The integration scripts run on the edit screen, not inside
 				// the browser, so they never see the browser's own strings.
 				'i18n'              => [
@@ -219,9 +241,66 @@ class Assets {
 				'allowedMimeTypes'  => Mime::allowed_types( $this->config->context ),
 			],
 			$this->config->provider_id
-		) );
+		);
+	}
 
-		return $handle;
+	/**
+	 * The inline script that puts part of a script's configuration in the
+	 * registry, under the script's own handle.
+	 *
+	 * @param string $handle The script's handle.
+	 * @param string $part   global or browser.
+	 * @param array  $value  What it is told.
+	 *
+	 * @return string
+	 */
+	public static function entry_script( string $handle, string $part, array $value ): string {
+		return sprintf(
+			'window.%1$s=window.%1$s||{};window.%1$s[%2$s]=window.%1$s[%2$s]||{};window.%1$s[%2$s][%3$s]=%4$s;',
+			self::REGISTRY,
+			(string) wp_json_encode( $handle ),
+			(string) wp_json_encode( $part ),
+			(string) wp_json_encode( $value )
+		);
+	}
+
+	/**
+	 * Load one of the built scripts with the page's configuration in front
+	 * of it.
+	 *
+	 * @param string   $handle Its handle.
+	 * @param string   $entry  Its entry in assets/build.
+	 * @param string[] $deps   What it needs besides its imports.
+	 *
+	 * @return bool Whether it loaded.
+	 */
+	private function enqueue_script( string $handle, string $entry, array $deps = [] ): bool {
+		if ( ! AssetFiles::enqueue_built_script( $handle, __FILE__, $entry, $deps ) ) {
+			return false;
+		}
+
+		$this->configure( $handle, 'global', $this->global_config() );
+
+		return true;
+	}
+
+	/**
+	 * Hand a script part of its configuration, once.
+	 *
+	 * @param string $handle The script's handle.
+	 * @param string $part   global or browser.
+	 * @param array  $value  What it is told.
+	 *
+	 * @return void
+	 */
+	private function configure( string $handle, string $part, array $value ): void {
+		if ( isset( self::$configured[ $handle ][ $part ] ) ) {
+			return;
+		}
+
+		self::$configured[ $handle ][ $part ] = true;
+
+		wp_add_inline_script( $handle, self::entry_script( $handle, $part, $value ), 'before' );
 	}
 
 	/**
@@ -285,7 +364,7 @@ class Assets {
 	 * @return void
 	 */
 	private function enqueue_host_integration(): void {
-		AssetFiles::enqueue_built_script( Runtime::handle( 'browser-host' ), __FILE__, 'host', [ 'media-views', $this->enqueue_global_config() ] );
+		$this->enqueue_script( Runtime::handle( 'browser-host' ), 'host', [ 'media-views' ] );
 	}
 
 	/**
@@ -294,14 +373,12 @@ class Assets {
 	 * @return void
 	 */
 	private function enqueue_browser(): void {
-		$config_handle = $this->enqueue_global_config();
-
 		AssetFiles::enqueue_style( Runtime::handle( 'browser' ), __FILE__, 'css/browser.css' );
 		AssetFiles::enqueue_style( Runtime::handle( 'upload' ), __FILE__, 'css/upload.css' );
 
-		$this->browser_loaded = AssetFiles::enqueue_built_script( Runtime::handle( 'browser' ), __FILE__, 'browser', [ $config_handle ] );
+		$this->browser_loaded = $this->enqueue_script( self::browser_handle(), 'browser' );
 
-		$this->localize_browser();
+		$this->configure_browser();
 	}
 
 	/**
@@ -318,20 +395,20 @@ class Assets {
 
 		[ $handle, $entry ] = self::INTEGRATIONS[ $post_type ];
 
-		AssetFiles::enqueue_built_script( Runtime::handle( $handle ), __FILE__, $entry, [ $this->enqueue_global_config() ] );
+		$this->enqueue_script( Runtime::handle( $handle ), $entry );
 	}
 
 	/**
-	 * Hand the browser script its configuration and translations.
+	 * Hand the browser script its own configuration and translations.
 	 *
 	 * @return void
 	 */
-	private function localize_browser(): void {
+	private function configure_browser(): void {
 		if ( ! $this->browser_loaded ) {
 			return;
 		}
 
-		wp_localize_script( Runtime::handle( 'browser' ), 's3BrowserConfig', $this->config->filter(
+		$this->configure( self::browser_handle(), 'browser', (array) $this->config->filter(
 			'browser_config',
 			[
 				'postId'   => $this->screen->current_post_id(),

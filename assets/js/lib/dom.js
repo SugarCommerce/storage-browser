@@ -149,7 +149,7 @@ export function element( markup ) {
  * @return {Raw} Its markup, or nothing for a name PHP did not send.
  */
 export function icon( name ) {
-	const icons = browserConfig().icons || window.S3BrowserIcons || {};
+	const icons = browserConfig().icons || {};
 
 	return raw( typeof icons[ name ] === 'string' ? icons[ name ] : '' );
 }

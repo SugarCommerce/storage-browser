@@ -125,7 +125,7 @@ function keepSelectButton() {
 		return;
 	}
 
-	const tab = `menu-item-s3_${ globalConfig().providerId }`;
+	const tab = `menu-item-${ globalConfig().tabId }`;
 	const activeTab = document.querySelector( '.media-menu-item.active' );
 
 	if ( ! saved && button.textContent.trim() ) {

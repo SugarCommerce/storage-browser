@@ -13,6 +13,7 @@ namespace SugarCommerce\StorageBrowser\Picker;
 
 use Closure;
 use SugarCommerce\Plugin\Assets as AssetFiles;
+use SugarCommerce\StorageBrowser\Admin\Assets;
 use SugarCommerce\StorageBrowser\Admin\Config;
 use SugarCommerce\StorageBrowser\Admin\Icon;
 use SugarCommerce\StorageBrowser\Rest\Controller;
@@ -27,14 +28,22 @@ use SugarCommerce\StorageBrowser\Utils\Runtime;
  *     // A button beside an input of your own; the input gets s3://bucket/key.
  *     echo $picker->button( 'my-file-url', [ 'name' => 'my-file-name', 'accept' => [ 'zip', 'wav' ] ] );
  *
- *     // Or in JavaScript, once enqueue() has run on the page.
- *     const file = await window.SugarCommerceStoragePicker.open();
+ *     // Or in JavaScript, once enqueue() has run on the page, through this
+ *     // build's entry -- Picker::handle() names it.
+ *     const file = await window.SugarCommerceStorageBrowser[ handle ].open();
  *
  * The same picker is offered to other packages as a "file source" --
  * {@see source()} -- in a shape that names no class of this package, so a
  * field library can show the button without depending on this one.
  */
 final class Picker {
+
+	/**
+	 * The pickers already handed to the script in this request, by id.
+	 *
+	 * @var array<string, true>
+	 */
+	private static array $added = [];
 
 	/**
 	 * Build a picker for one browser.
@@ -51,12 +60,15 @@ final class Picker {
 	}
 
 	/**
-	 * This picker's id: the browser's, so two browsers on a page are two sources.
+	 * This picker's id: the browser's, so two browsers on a page are two
+	 * sources, and the build's, so two plugins bundling this library for the
+	 * same provider are two sources as well. It is the picker's key in
+	 * `window.sugarcommerceFileSources`, which every plugin's copy writes to.
 	 *
-	 * @return string
+	 * @return string `sugarcommerce_storage_browser_r2_shop` unprefixed.
 	 */
 	public function id(): string {
-		return $this->config->hook_suffix();
+		return Runtime::key( $this->config->hook_suffix() );
 	}
 
 	/**
@@ -110,7 +122,9 @@ final class Picker {
 	 * Load the picker on this page, for this browser.
 	 *
 	 * Safe to call more than once, and from more than one browser: each adds
-	 * itself to `window.SugarCommerceStoragePickers` under its id.
+	 * itself, under its id, to the `pickers` of this build's entry in
+	 * `window.SugarCommerceStorageBrowser` -- the entry keyed by the script's
+	 * handle, so another plugin's copy on the page keeps its own.
 	 *
 	 * @return bool Whether it is loaded: false when the user may not use the browser.
 	 */
@@ -125,15 +139,15 @@ final class Picker {
 			return false;
 		}
 
-		static $added = [];
-
-		if ( empty( $added[ $this->id() ] ) ) {
-			$added[ $this->id() ] = true;
+		if ( empty( self::$added[ $this->id() ] ) ) {
+			self::$added[ $this->id() ] = true;
 
 			wp_add_inline_script(
 				self::handle(),
 				sprintf(
-					'window.SugarCommerceStoragePickers = window.SugarCommerceStoragePickers || {}; window.SugarCommerceStoragePickers[%s] = %s;',
+					'window.%1$s=window.%1$s||{};window.%1$s[%2$s]=window.%1$s[%2$s]||{};window.%1$s[%2$s].pickers=window.%1$s[%2$s].pickers||{};window.%1$s[%2$s].pickers[%3$s]=%4$s;',
+					Assets::REGISTRY,
+					(string) wp_json_encode( self::handle() ),
 					(string) wp_json_encode( $this->id() ),
 					(string) wp_json_encode( $this->config() )
 				),
@@ -170,7 +184,9 @@ final class Picker {
 		$attributes = [
 			'type'                         => 'button',
 			'class'                        => (string) ( $args['class'] ?? 'button' ),
-			'data-storage-picker'          => '1',
+			// The build's handle: each copy of the script attaches only
+			// the buttons its own build drew.
+			'data-storage-picker'          => self::handle(),
 			'data-storage-picker-source'   => $this->id(),
 			'data-storage-picker-target'   => '#' . $input,
 			'data-storage-picker-name'     => empty( $args['name'] ) ? '' : '#' . $args['name'],

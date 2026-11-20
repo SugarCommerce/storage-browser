@@ -8,7 +8,7 @@
 import domReady from '@wordpress/dom-ready';
 
 import { request } from './lib/api';
-import { globalConfig } from './lib/config';
+import { globalConfig, handle } from './lib/config';
 import { clearBusy, html, on, setBusy } from './lib/dom';
 
 /**
@@ -195,7 +195,13 @@ function test( button ) {
 }
 
 domReady( () => {
+	// Only the buttons this build drew (Utils\Admin marks them): another
+	// plugin's copy may be on the page, with its own REST route and nonce.
 	on( document, 'click', '.s3-test-connection', ( event, button ) => {
+		if ( button.dataset.storageBrowser !== handle ) {
+			return;
+		}
+
 		event.preventDefault();
 		test( button );
 	} );
