@@ -83,7 +83,9 @@ $browser->set_allowed_buckets( [ 'my-bucket' ] );
 Confining it to one bucket is worth doing whenever you can: S3 keys usually
 reach every bucket in the account, and the bucket arrives with each request.
 Every REST route checks the capability, and every bucket route checks the
-allow-list as well; a key with a `.` or `..` segment is refused before a
+allow-list as well -- so does the media tab, which core would otherwise open
+for anybody who may upload; changing a bucket's CORS rules takes
+`manage_options` besides. A key with a `.` or `..` segment is refused before a
 request is made.
 
 `Account::aws( $region )`, `Account::regional( Provider::DigitalOcean, 'ams3' )`
@@ -350,128 +352,27 @@ npm run lint:js
 The build's files are what ship. CI builds again and fails when the result
 differs from what was committed.
 
-## Moving from arraypress/wp-*
+## How it is laid out
 
-### From `sugarcommerce/storage` (`SugarCommerce\Storage\Browser`)
+* `Browser.php`, `Client.php`, `Cache.php`, `Permissions.php` -- the browser, what it asks of storage, its cache, and what a key may do
+* `Admin/` -- the media tab, the page it can live on, its configuration, icons, scripts and strings
+* `Rest/` -- the REST controller; its routes and handlers are `Traits/Controller`, one trait per job
+* `Picker/` -- "Choose from your bucket"
+* `Tables/` -- the bucket and object list tables
+* `Cli/` -- the WP-CLI import commands
+* `Models/`, `Utils/` -- an object row, and the small helpers (paths, timestamps, the build's prefix)
+* `Traits/` -- `Client` and `Controller`, one trait per job, and the debug and context traits they share
+* `assets/js/` -- the scripts' sources (`src/` is PHP only); `assets/build/` what they build to; `assets/css/` the styles
 
-| Old | New |
-|---|---|
-| `SugarCommerce\Storage\Browser\{Class}` (`Browser`, `Client`, `Cache`, `Permissions`, `Admin\*`, `Rest\*`, `Tables\*`, `Cli\*`, `Models\S3Object`, `Traits\Shared\*`, `Utils\*`) | `SugarCommerce\StorageBrowser\{Class}` |
-| `SugarCommerce\Storage\S3\Account` (the constructor's first argument) | `SugarCommerce\S3\Account` |
-| `SugarCommerce\Storage\Utils\Runtime::hook( $name )` for the browser's hooks | `SugarCommerce\StorageBrowser\Utils\Runtime::hook( $name )` |
-| every hook `sugarcommerce_storage_{name}` this README lists (`browser_config`, `s3_object_renamed`, …) | `sugarcommerce_storage_browser_{name}` -- the same `{name}` |
-| cron hook `Browser::prune_hook( $suffix )` (`sugarcommerce_storage_s3_prune_uploads_{suffix}`) | `Browser::prune_hook( $suffix )`: `sugarcommerce_storage_browser_s3_prune_uploads_{suffix}`; clear the old one once |
-| script handles `{handle}-browser-core`, `-browser-modals`, `-browser-files`, `-browser-folders`, `-browser-integrations`, `-browser-cors`, `-browser-md5`, `-browser-upload` | one: `{handle}-browser` (`assets/build/browser.js`) |
-| `{handle}-browser-host`, `-browser-wc`, `-browser-edd`, `-connection`, `-browser-config` | the same names, built entries; `{handle}` is now `sugarcommerce-storage-browser` |
-| `Admin\Templates` (`tmpl-s3-bucket-details`, `tmpl-s3-file-details`, wp.template) | `assets/js/lib/templates.js` |
-| `window.S3Browser` (the jQuery object other scripts could extend) | none: modules. `window.S3BrowserHost`, `S3BrowserGlobalConfig`, `s3BrowserConfig` and the `s3-browser:insert` message are unchanged |
-| the scripts' `jquery` and `wp-util` dependencies | none |
-| (new) | `Browser::picker()`, `Picker\Picker`, `Picker\Listing`, `GET buckets`, `GET buckets/{bucket}/browse` |
+## Security
 
-Behaviour that changed: the media frame loads a browser's scripts only in that
-browser's own tab. Every tab is the one `media-upload-popup` page, and two
-browsers on a site (two plugins, or two contexts) each loaded theirs into the
-other's, where whichever ran first drove both with its own configuration.
-
-### From `arraypress/wp-s3-browser` (`ArrayPress\S3`)
-
-Everything not listed keeps its name under `SugarCommerce\StorageBrowser`
-(`ArrayPress\S3\Client` is `SugarCommerce\StorageBrowser\Client`, and so on for
-`Browser`, `Cache`, `Permissions`, `Admin\*`, `Rest\*`, `Tables\*`, `Cli\*`,
-`Models\S3Object`, `Traits\Shared\Context`, `Traits\Shared\Debug`,
-`Utils\Admin`, `Utils\Directory`, `Utils\Sanitize`, `Utils\Timestamp`,
-`Utils\Validate`). The browser's second S3 client is gone; see
-[Removed in the tidy-up](#removed-in-the-tidy-up). Its REST routes, their
-payloads, `window.S3BrowserHost` and the option keys are unchanged; the
-scripts were rewritten without jQuery (above).
-
-| Old | New |
-|---|---|
-| `ArrayPress\S3\Provider` | `SugarCommerce\S3\Account` (same constructor and methods) |
-| `ArrayPress\S3\Provider::r2()` / `aws()` / `regional()` / `custom()` | `Account::r2()` / `aws()` / `regional()` / `custom()` |
-| `ArrayPress\S3Signer\Enums\Provider` (the `$type` argument) | `SugarCommerce\S3\Provider` |
-| `new Browser( Provider $provider, … )` | `new Browser( Account $account, … )` |
-| `Client::get_provider()` | `Client::get_account()` |
-| `ArrayPress\S3\Cors\Analysis`, `Rules`, `Origin` | `SugarCommerce\S3\Cors\Analysis`, `Rules`, `Origin` |
-| `Utils\Transport::is_transport_error()` / `explain()` | `SugarCommerce\S3\Transport::is_transport_error()` / `explain()` |
-| `Utils\Encode::object_key( $key )` | `SugarCommerce\S3\Endpoint::request_key( $key )` |
-| `Utils\Detect::is_s3_path( $path )` | `Utils\Parse::is_file( $path )` |
-| `Utils\Parse::path( $path )` | `Utils\Parse::path( $path )` — now also reads `s3://` paths, which it refused before (so `verify` checked none of them) |
-| `Utils\Shortcodes::has( $path )` | `Utils\Parse::has_shortcode( $path )` |
-| `Utils\File::extension( $name )` | `SugarCommerce\Storage\Files\Filename::extension( $name )` |
-| `Utils\File::name( $key )` | `Files\Filename::basename( $key )` |
-| `Utils\File::mime_type( $name )` | `Files\Mime::of( $name )` |
-| `Utils\File::category( $name )` | `Files\Mime::category( $name )` |
-| `Utils\Mime::get_allowed_types( $context )` | `Files\Mime::allowed_types( $context )` |
-| `Utils\Mime::get_allowed_extensions( $context )` | `Files\Mime::allowed_extensions( $context )` |
-| `Utils\Mime::is_allowed_extension( $name, $context )` | `Files\Mime::is_allowed( $name, $context )` |
-| `Admin\Icon::render()` / `file()` / `for_scripts()` | unchanged (plus `for_picker()`); always Heroicons, no wp-field-kit, no Dashicons fallback |
-| Breadcrumbs through `arraypress/wp-breadcrumbs` | drawn by `Admin\MediaLibrary`, same markup |
-| `arraypress_enqueue_composer_*()` (wp-composer-assets) | `SugarCommerce\Plugin\Assets::enqueue_style( $handle, __FILE__, $file )` / `enqueue_script()` / `url()` (sugarcommerce/plugin) |
-| filter `s3_browser_allowed_buckets` | `{prefix}_browser_allowed_buckets` |
-| filter `s3_browser_global_config` (+ `_{context}`) | `{prefix}_browser_global_config` (+ `_{context}`) |
-| filter `s3_browser_config` (+ `_{context}`) | `{prefix}_browser_config` (+ `_{context}`) |
-| filter `s3_browser_translations` (+ `_{context}`) | `{prefix}_browser_translations` (+ `_{context}`) |
-| filter `s3_browser_insert_label` (+ `_{context}`) | `{prefix}_browser_insert_label` (+ `_{context}`) |
-| filter `s3_browser_auto_load` | `{prefix}_browser_auto_load` |
-| filter `s3_browser_allowed_mime_types_{context}` | `{prefix}_allowed_mime_types` and `{prefix}_allowed_mime_types_{context}` |
-| filter `s3_object_hidden_files` | `{prefix}_s3_object_hidden_files` |
-| filter `arraypress_s3_known_buckets_fallback` | `{prefix}_s3_known_buckets_fallback` |
-| filter `arraypress_s3_connection_test_fallback_bucket` | `{prefix}_s3_connection_test_fallback_bucket` |
-| filter `arraypress_s3_object_references` | `{prefix}_s3_object_references` |
-| action `arraypress_s3_object_renamed` | `{prefix}_s3_object_renamed` |
-| every other `arraypress_s3_{name}` (+ `_{context}`) | `{prefix}_s3_{name}` (+ `_{context}`) |
-| handles `s3-browser-core`, `s3-browser-modals`, `s3-browser-files`, `s3-browser-folders`, `s3-browser-integrations`, `s3-browser-cors`, `s3-upload-script` | one built script, `{handle}-browser` |
-| handles `s3-browser-global-config`, `s3-browser-host`, `s3-browser-wc`, `s3-browser-edd`, `s3-connection-test` | `{handle}-browser-config`, `-browser-host`, `-browser-wc`, `-browser-edd`, `-connection` |
-| styles `s3-admin-components`, `s3-browser-style`, `s3-upload-style` | `{handle}-admin`, `-browser`, `-upload` |
-| REST namespace `s3-browser/v1` (prefixed `{prefix}-s3-browser/v1`) | unchanged |
-| JS `window.S3BrowserHost`, `S3BrowserGlobalConfig`, `s3BrowserConfig` | unchanged |
-| text domain `arraypress` | `sugarcommerce` |
-
-`{prefix}` is `sugarcommerce_storage_browser` unprefixed
-(`myplugin_sugarcommerce_storage_browser` in a build prefixed `MyPlugin\`);
-`{handle}` is the same with hyphens. `allowed_mime_types` is
-`sugarcommerce/storage`'s hook, `sugarcommerce_storage_allowed_mime_types`.
-
-### Removed in the tidy-up
-
-Nothing in SugarCart, its Lemon Squeezy add-on, edd-registrars, the EDD
-plugins or the other SugarCommerce packages used these, by old or new name.
-
-| Removed | Instead |
-|---|---|
-| `Utils\Assets` | `SugarCommerce\Plugin\Assets` (`enqueue_style( $handle, __FILE__, $file )`, `enqueue_script()`, `url()`, `contents()`, `path_to_url()`) |
-| `Api`, `Interfaces\Api`, `Traits\Api\*`, `Traits\Shared\Timeouts` | `SugarCommerce\S3\Bucket` through `Client::bucket( $name )`, and `Client::signer()` (was `Client::api()`) |
-| `Xml\{Parser, Builder, Extract, Response}` | `SugarCommerce\S3\Xml`, and Bucket's own readers |
-| `Responses\*`, `Interfaces\Response`, `Abstracts\Response` | every `Client` method returns an array (or `true`, or a string) or a `WP_Error` with storage's code, its words and a REST `status` |
-| `Models\S3Bucket` | `[ 'name', 'created' ]` from `Client::get_buckets()` / `SugarCommerce\S3\Bucket::all()` |
-| `Models\S3Prefix` | the prefix string; `Utils\Directory::name( $prefix )` for its name |
-| `Models\S3Object::get_dashicon_class()`, `to_array()` | removed: unused (`Admin\Icon::file()` draws the icon). It is now built from a `SugarCommerce\S3\Bucket::list()` row |
-| `Traits\Client\*` | `Browser\Client`, one class |
-| `Client::get_object_models()`, `get_objects()` | `Client::get_objects()`: `S3Object` rows (hidden files left out), prefix strings, `truncated`, `continuation_token` |
-| `Client::get_bucket_models()`, `get_buckets( $max, $prefix, $marker )` | `Client::get_buckets( $use_cache )`: every bucket, no marker paging |
-| `Client::put_object()`, `head_object()` | `Client::bucket( $name )->upload_file()` / `put()` / `head()` |
-| `Client::copy_object()` | `Client::rename_object()`, or `SugarCommerce\S3\Bucket::copy()` |
-| `Client::batch_delete_objects()`, `delete_folder_batch()`, `delete_folder( …, $recursive, $force )` | `Client::delete_folder( $bucket, $path )`: every page of keys, DeleteObjects, one key at a time where that is refused |
-| `Client::get_cors_configuration()` | `Client::get_cors_rules()` |
-| `Client::set_cors_configuration()`, `generate_cors_rules()` | `Client::set_cors_scenario()`, or `SugarCommerce\S3\Bucket::set_cors( Rules::policy( … ) )` |
-| `Client::get_bucket_location()` (a response) | the same, a string or a `WP_Error` |
-| `Utils\Validate::filename()` | `Files\Filename::problem( $name )`: the reason, or `''` |
-| `Utils\Validate::cors_rules()` | `SugarCommerce\S3\Cors\Policy::from_array()`, which refuses a bad rule |
-| `Traits\Shared\Context::apply_contextual_filters()` and the hooks it fired: `s3_{operation}_params` / `_response` around every client call, `s3_cors_analysis_result`, `s3_cors_upload_check_result`, `s3_create_folder_params`, `s3_folder_created`, `s3_folder_placeholder_content`, `s3_delete_folder_params`, `s3_delete_folder_object`, `s3_folder_deleted` | removed: no consumer, and their values were the removed response objects |
-| `Account::format_url()`, `build_url_with_encoded_key()`, `build_url_with_query()` | the signer's: `Account::signer( $access, $secret )->sign( … )->url` |
-
-Behaviour that changed with it, all of it fixes: a copy refused inside a 200
-no longer counts as a rename (the original stays); a bucket's region is read
-(it always came back as the provider's default); a fallback bucket that does
-not exist no longer passes the connection test or appears in the bucket list;
-deleting a folder takes every page of keys, not the first thousand, in one
-DeleteObjects per thousand; `Debug` reports storage's refusals rather than
-raw requests; `Bucket::head()` puts the status in its error's data; and
-`StorageError` keeps storage's own words as `reason`. One a caller has to
-know: `new Client()` -- and so `new Browser()` -- throws an
-`InvalidArgumentException` for an empty access key or secret, where it used
-to build and then fail every request.
+* Checks the browser's capability on every route and on the media tab, which WordPress itself opens for anybody who may upload
+* Confines every route, and the media tab's listing, to the allow-list of buckets when there is one -- S3 keys usually reach the whole account
+* Asks `manage_options` as well before a bucket's CORS rules are set or removed, since they change the bucket for every site using it
+* Lets a user resume, sign, finish or abort only an upload they started, in the bucket the route names
+* Refuses a malformed bucket name before it reaches a host name, and a key with a `.` or `..` segment before anything is signed
+* Escapes everything the scripts put into the page by default, and everything the list tables print
+* Reports storage's refusals to the debug log without a header, so no signature or key reaches it
 
 ## Requirements
 
