@@ -318,7 +318,7 @@ const chosen = await window.sugarcommerceFileSources[ id ].pick( { accept: [ 'zi
 
 ## The scripts
 
-Plain JavaScript in ES modules (`src/js`), each with one job, built by
+Plain JavaScript in ES modules (`assets/js`), each with one job, built by
 `@wordpress/scripts` into `assets/build` -- one file per page that needs one,
 with an `.asset.php` naming the WordPress scripts it imports
 (`wp-api-fetch`, `wp-i18n`, `wp-dom-ready`) and a version that changes with
@@ -363,7 +363,7 @@ differs from what was committed.
 | cron hook `Browser::prune_hook( $suffix )` (`sugarcommerce_storage_s3_prune_uploads_{suffix}`) | `Browser::prune_hook( $suffix )`: `sugarcommerce_storage_browser_s3_prune_uploads_{suffix}`; clear the old one once |
 | script handles `{handle}-browser-core`, `-browser-modals`, `-browser-files`, `-browser-folders`, `-browser-integrations`, `-browser-cors`, `-browser-md5`, `-browser-upload` | one: `{handle}-browser` (`assets/build/browser.js`) |
 | `{handle}-browser-host`, `-browser-wc`, `-browser-edd`, `-connection`, `-browser-config` | the same names, built entries; `{handle}` is now `sugarcommerce-storage-browser` |
-| `Admin\Templates` (`tmpl-s3-bucket-details`, `tmpl-s3-file-details`, wp.template) | `src/js/lib/templates.js` |
+| `Admin\Templates` (`tmpl-s3-bucket-details`, `tmpl-s3-file-details`, wp.template) | `assets/js/lib/templates.js` |
 | `window.S3Browser` (the jQuery object other scripts could extend) | none: modules. `window.S3BrowserHost`, `S3BrowserGlobalConfig`, `s3BrowserConfig` and the `s3-browser:insert` message are unchanged |
 | the scripts' `jquery` and `wp-util` dependencies | none |
 | (new) | `Browser::picker()`, `Picker\Picker`, `Picker\Listing`, `GET buckets`, `GET buckets/{bucket}/browse` |

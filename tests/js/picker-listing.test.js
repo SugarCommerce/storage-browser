@@ -11,7 +11,7 @@ import {
 	entries,
 	parentOf,
 	valueFor,
-} from '../../src/js/picker/listing';
+} from '../../assets/js/picker/listing';
 
 describe( 'folders', () => {
 	test( 'a prefix is a trail of folders', () => {

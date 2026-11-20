@@ -8,8 +8,8 @@
 
 import { createHash, randomBytes } from 'node:crypto';
 
-import { createUploader } from '../../../src/js/lib/uploader';
-import { partSettings } from '../../../src/js/lib/multipart';
+import { createUploader } from '../../../assets/js/lib/uploader';
+import { partSettings } from '../../../assets/js/lib/multipart';
 
 export const STRINGS = {
 	uploadCancelled: 'Upload cancelled',

@@ -4,7 +4,7 @@
 
 import { expect, test } from 'vitest';
 
-import { corsRuleFor } from '../../src/js/lib/buckets';
+import { corsRuleFor } from '../../assets/js/lib/buckets';
 
 const where = { r2: 'In Cloudflare: {bucket}', default: 'Anywhere' };
 

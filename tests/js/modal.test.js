@@ -4,8 +4,8 @@
 
 import { afterEach, expect, test, vi } from 'vitest';
 
-import { html } from '../../src/js/lib/dom';
-import { closeModal, openModal } from '../../src/js/lib/modal';
+import { html } from '../../assets/js/lib/dom';
+import { closeModal, openModal } from '../../assets/js/lib/modal';
 
 afterEach( async () => {
 	await closeModal( 'm' );

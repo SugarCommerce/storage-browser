@@ -5,7 +5,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { expect, test } from 'vitest';
 
-import { md5Base64, md5Hex } from '../../src/js/lib/md5';
+import { md5Base64, md5Hex } from '../../assets/js/lib/md5';
 
 const bytes = ( text ) => new TextEncoder().encode( text );
 

@@ -34,8 +34,8 @@ final class TranslationsTest extends TestCase {
 	public static function keys_used_by_javascript(): array {
 		$refs  = [];
 		$files = array_merge(
-			glob( dirname( __DIR__, 2 ) . '/src/js/*.js' ) ?: [],
-			glob( dirname( __DIR__, 2 ) . '/src/js/*/*.js' ) ?: []
+			glob( dirname( __DIR__, 2 ) . '/assets/js/*.js' ) ?: [],
+			glob( dirname( __DIR__, 2 ) . '/assets/js/*/*.js' ) ?: []
 		);
 
 		foreach ( $files as $file ) {

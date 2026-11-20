@@ -8,7 +8,7 @@ import {
 	comparablePath,
 	frameUrl,
 	listenForInserts,
-} from '../../src/js/lib/host-page';
+} from '../../assets/js/lib/host-page';
 
 afterEach( () => {
 	delete window.S3BrowserGlobalConfig;

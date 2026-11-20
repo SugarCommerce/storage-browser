@@ -5,11 +5,11 @@
   "description": "The bucket browser's and picker's scripts, built to build/ with @wordpress/scripts.",
   "license": "GPL-2.0-or-later",
   "scripts": {
-    "build": "wp-scripts build browser=./src/js/browser.js picker=./src/js/picker.js connection=./src/js/connection.js host=./src/js/host.js edd=./src/js/edd.js wc=./src/js/wc.js --output-path=assets/build",
-    "start": "wp-scripts start browser=./src/js/browser.js picker=./src/js/picker.js connection=./src/js/connection.js host=./src/js/host.js edd=./src/js/edd.js wc=./src/js/wc.js --output-path=assets/build",
+    "build": "wp-scripts build browser=./assets/js/browser.js picker=./assets/js/picker.js connection=./assets/js/connection.js host=./assets/js/host.js edd=./assets/js/edd.js wc=./assets/js/wc.js --output-path=assets/build",
+    "start": "wp-scripts start browser=./assets/js/browser.js picker=./assets/js/picker.js connection=./assets/js/connection.js host=./assets/js/host.js edd=./assets/js/edd.js wc=./assets/js/wc.js --output-path=assets/build",
     "test:js": "wp-scripts test-unit-js",
-    "lint:js": "wp-scripts lint-js src/js tests/js",
-    "format:js": "wp-scripts format src/js tests/js"
+    "lint:js": "wp-scripts lint-js assets/js tests/js",
+    "format:js": "wp-scripts format assets/js tests/js"
   },
   "devDependencies": {
     "@wordpress/api-fetch": "^8.1.0",

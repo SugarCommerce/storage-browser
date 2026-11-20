@@ -4,7 +4,7 @@
 
 import { expect, test } from 'vitest';
 
-import { escapeHtml, formatFileSize, html, raw } from '../../src/js/lib/dom';
+import { escapeHtml, formatFileSize, html, raw } from '../../assets/js/lib/dom';
 
 test( 'every value is escaped, quotes included', () => {
 	const name = '"><img src=x onerror=alert(1)>';

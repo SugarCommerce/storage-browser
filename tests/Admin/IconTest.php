@@ -120,8 +120,8 @@ final class IconTest extends TestCase {
 	 */
 	public function test_no_script_draws_a_dashicon(): void {
 		$files = array_merge(
-			glob( dirname( __DIR__, 2 ) . '/src/js/*.js' ) ?: [],
-			glob( dirname( __DIR__, 2 ) . '/src/js/*/*.js' ) ?: []
+			glob( dirname( __DIR__, 2 ) . '/assets/js/*.js' ) ?: [],
+			glob( dirname( __DIR__, 2 ) . '/assets/js/*/*.js' ) ?: []
 		);
 
 		$this->assertNotEmpty( $files );
@@ -130,7 +130,7 @@ final class IconTest extends TestCase {
 			$this->assertStringNotContainsString( 'dashicons-', (string) file_get_contents( $file ), basename( $file ) );
 		}
 
-		$this->assertStringContainsString( 'browserConfig().icons', (string) file_get_contents( dirname( __DIR__, 2 ) . '/src/js/lib/dom.js' ) );
+		$this->assertStringContainsString( 'browserConfig().icons', (string) file_get_contents( dirname( __DIR__, 2 ) . '/assets/js/lib/dom.js' ) );
 	}
 
 	public function test_a_bucket_row_draws_the_bucket_icon(): void {

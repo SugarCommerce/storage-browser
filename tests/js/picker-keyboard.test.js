@@ -4,7 +4,7 @@
 
 import { describe, expect, test } from 'vitest';
 
-import { keyAction, nextIndex } from '../../src/js/picker/keyboard';
+import { keyAction, nextIndex } from '../../assets/js/picker/keyboard';
 
 describe( 'nextIndex', () => {
 	test( 'the arrows move one, and stop at the ends', () => {

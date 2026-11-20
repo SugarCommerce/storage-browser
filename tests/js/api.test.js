@@ -4,7 +4,7 @@
 
 import { describe, expect, test } from 'vitest';
 
-import { buildRequest, ROUTES, toError } from '../../src/js/lib/api';
+import { buildRequest, ROUTES, toError } from '../../assets/js/lib/api';
 
 describe( 'buildRequest', () => {
 	test( 'placeholders are filled, encoded, and used up', () => {

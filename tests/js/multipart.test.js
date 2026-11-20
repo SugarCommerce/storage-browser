@@ -20,7 +20,7 @@ import {
 	signingBatch,
 	storageMessage,
 	usesParts,
-} from '../../src/js/lib/multipart';
+} from '../../assets/js/lib/multipart';
 
 const MiB = 1048576;
 

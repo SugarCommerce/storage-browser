@@ -4,12 +4,12 @@
 
 import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
 
-vi.mock( '../../src/js/lib/api', () => ( {
+vi.mock( '../../assets/js/lib/api', () => ( {
 	request: vi.fn(),
 } ) );
 
-import { request } from '../../src/js/lib/api';
-import { openPicker } from '../../src/js/picker/dialog';
+import { request } from '../../assets/js/lib/api';
+import { openPicker } from '../../assets/js/picker/dialog';
 
 const LISTINGS = {
 	'': {
